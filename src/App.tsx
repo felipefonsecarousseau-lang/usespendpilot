@@ -10,6 +10,8 @@ import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
 import InvoiceScanPage from "./pages/InvoiceScanPage";
 import ManualExpensesPage from "./pages/ManualExpensesPage";
+import FamilyPage from "./pages/FamilyPage";
+import GoalDetailPage from "./pages/GoalDetailPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +46,8 @@ function AppRoutes() {
       <Route path="/dashboard" element={session ? <DashboardPage /> : <Navigate to="/" />} />
       <Route path="/scan" element={session ? <InvoiceScanPage /> : <Navigate to="/" />} />
       <Route path="/expenses" element={session ? <ManualExpensesPage /> : <Navigate to="/" />} />
+      <Route path="/family" element={session ? <FamilyPage /> : <Navigate to="/" />} />
+      <Route path="/goals/:id" element={session ? <GoalDetailPage /> : <Navigate to="/" />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

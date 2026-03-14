@@ -14,7 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      family_members: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          papel: string
+          renda_mensal: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          papel?: string
+          renda_mensal?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          papel?: string
+          renda_mensal?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      goals: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          user_id: string
+          valor_alvo: number
+          valor_guardado: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          user_id: string
+          valor_alvo?: number
+          valor_guardado?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          user_id?: string
+          valor_alvo?: number
+          valor_guardado?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
