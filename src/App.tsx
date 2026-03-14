@@ -10,6 +10,8 @@ import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
 import InvoiceScanPage from "./pages/InvoiceScanPage";
 import ManualExpensesPage from "./pages/ManualExpensesPage";
+import FamilyPage from "./pages/FamilyPage";
+import GoalDetailPage from "./pages/GoalDetailPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
