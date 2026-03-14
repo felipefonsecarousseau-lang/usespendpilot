@@ -28,7 +28,7 @@ const cardVariants = {
   animate: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { type: "spring", stiffness: 260, damping: 20, delay: i * 0.08 },
+    transition: { type: "spring" as const, stiffness: 260, damping: 20, delay: i * 0.08 },
   }),
 };
 
