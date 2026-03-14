@@ -46,6 +46,8 @@ function AppRoutes() {
       <Route path="/dashboard" element={session ? <DashboardPage /> : <Navigate to="/" />} />
       <Route path="/scan" element={session ? <InvoiceScanPage /> : <Navigate to="/" />} />
       <Route path="/expenses" element={session ? <ManualExpensesPage /> : <Navigate to="/" />} />
+      <Route path="/family" element={session ? <FamilyPage /> : <Navigate to="/" />} />
+      <Route path="/goals/:id" element={session ? <GoalDetailPage /> : <Navigate to="/" />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
