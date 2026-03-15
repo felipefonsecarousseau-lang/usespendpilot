@@ -1,1 +1,4 @@
 project_id = "cvcjdsyiofrevcerdofj"
+
+[functions.process-receipt]
+verify_jwt = false
