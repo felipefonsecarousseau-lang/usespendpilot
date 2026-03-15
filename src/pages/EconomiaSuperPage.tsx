@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "@/components/AppLayout";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { generateInsights } from "@/lib/insights-engine";
 
 type Period = "30" | "90" | "180";
 const CATEGORIES = ["mercado", "higiene", "limpeza", "bebidas", "padaria", "hortifruti", "outros"] as const;
