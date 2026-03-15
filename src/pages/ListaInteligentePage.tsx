@@ -382,6 +382,28 @@ const ListaInteligentePage = () => {
             </Button>
           </div>
 
+          {/* Generate from history button */}
+          <div className="mt-4 flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={generateFromHistory}
+              disabled={generating || !historyData?.receipts?.length}
+              className="gap-2"
+            >
+              {generating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              Gerar lista baseada nas minhas últimas compras
+            </Button>
+            {!historyData?.receipts?.length && (
+              <span className="text-xs text-muted-foreground">
+                Envie notas fiscais primeiro
+              </span>
+            )}
+          </div>
+
           {/* Item chips */}
           {items.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-4">
