@@ -132,43 +132,10 @@ const EconomiaSuperPage = () => {
     return rows.sort((a, b) => a.produto.localeCompare(b.produto) || a.precoMedio - b.precoMedio);
   }, [enrichedItems]);
 
-  // 3. Sugestões de economia
-  const suggestions = useMemo(() => {
-    const map = new Map<string, { store: string; avg: number; count: number }[]>();
-    enrichedItems.forEach((item) => {
-      if (!map.has(item.nome_normalizado)) map.set(item.nome_normalizado, []);
-    });
-
-    // Build per-product per-store averages
-    const prodStoreMap = new Map<string, Map<string, { total: number; count: number; nome: string }>>();
-    enrichedItems.forEach((item) => {
-      if (!prodStoreMap.has(item.nome_normalizado)) prodStoreMap.set(item.nome_normalizado, new Map());
-      const sm = prodStoreMap.get(item.nome_normalizado)!;
-      const existing = sm.get(item.store_id) || { total: 0, count: 0, nome: item.store_nome };
-      existing.total += item.preco_unitario;
-      existing.count += 1;
-      sm.set(item.store_id, existing);
-    });
-
-    const result: { produto: string; msg: string; economia: number }[] = [];
-    prodStoreMap.forEach((stores, produto) => {
-      if (stores.size < 2) return;
-      const entries = [...stores.values()].map((v) => ({ nome: v.nome, avg: v.total / v.count }));
-      entries.sort((a, b) => a.avg - b.avg);
-      const cheapest = entries[0];
-      const mostExpensive = entries[entries.length - 1];
-      const diff = mostExpensive.avg - cheapest.avg;
-      const pct = Math.round((diff / mostExpensive.avg) * 100);
-      if (pct >= 5) {
-        result.push({
-          produto,
-          msg: `${produto} costuma ser ${pct}% mais barato no ${cheapest.nome}. Você paga em média ${formatMoney(mostExpensive.avg)} no ${mostExpensive.nome}, mas já encontrou por ${formatMoney(cheapest.avg)} no ${cheapest.nome}.`,
-          economia: diff,
-        });
-      }
-    });
-    return result.sort((a, b) => b.economia - a.economia);
-  }, [enrichedItems]);
+  // 3. Insights automáticos
+  const insights = useMemo(() => {
+    return generateInsights(enrichedItems, Number(period));
+  }, [enrichedItems, period]);
 
   // 4. Economia potencial
   const potentialSavings = useMemo(() => {
