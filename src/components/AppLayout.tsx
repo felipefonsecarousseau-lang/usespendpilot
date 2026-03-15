@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, ScanLine, FileText, Users, LogOut, TrendingDown } from "lucide-react";
+import { LayoutDashboard, ScanLine, FileText, Users, LogOut, TrendingDown, ShoppingCart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
