@@ -120,7 +120,72 @@ const ListaInteligentePage = () => {
       .slice(0, 5);
   }, [inputValue, knownProducts, items]);
 
-  // Analyze each list item against history
+  // Generate list from recent purchases
+  const generateFromHistory = () => {
+    if (!historyData?.items?.length || !historyData.receipts) return;
+    setGenerating(true);
+
+    // Get receipts from last 60 days
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 60);
+    const cutoffStr = cutoff.toISOString().split("T")[0];
+
+    const recentReceiptIds = new Set(
+      (historyData as any).receipts
+        ?.filter((r: any) => r.data_compra >= cutoffStr)
+        .map((r: any) => r.id) || []
+    );
+
+    // Find the most recent receipt
+    const sortedReceipts = [...((historyData as any).receipts || [])].sort(
+      (a: any, b: any) => b.data_compra.localeCompare(a.data_compra)
+    );
+    const lastReceiptId = sortedReceipts[0]?.id;
+    const lastReceiptItems = new Set(
+      historyData.items
+        .filter((i) => i.receipt_id === lastReceiptId)
+        .map((i) => i.nome_normalizado)
+    );
+
+    // Count frequency in last 60 days
+    const freq = new Map<string, number>();
+    historyData.items.forEach((item) => {
+      if (!recentReceiptIds.has(item.receipt_id)) return;
+      freq.set(item.nome_normalizado, (freq.get(item.nome_normalizado) || 0) + 1);
+    });
+
+    // Select recurring products (freq >= 2 OR in last receipt)
+    const candidates = new Map<string, number>();
+    freq.forEach((count, nome) => {
+      if (count >= 2 || lastReceiptItems.has(nome)) {
+        candidates.set(nome, count);
+      }
+    });
+
+    // Also add last receipt items not yet counted
+    lastReceiptItems.forEach((nome) => {
+      if (!candidates.has(nome)) candidates.set(nome, 1);
+    });
+
+    // Sort by frequency, limit to 12
+    const sorted = [...candidates.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 12);
+
+    const newItems: ListItem[] = sorted
+      .filter(([nome]) => !items.some((i) => i.nome.toLowerCase() === nome.toLowerCase()))
+      .map(([nome]) => ({
+        id: crypto.randomUUID(),
+        nome,
+        quantidade: 1,
+      }));
+
+    setTimeout(() => {
+      setItems((prev) => [...prev, ...newItems]);
+      setGenerating(false);
+    }, 400);
+  };
+
   const analysis: ProductAnalysis[] = useMemo(() => {
     if (!historyData || !items.length) return [];
 
