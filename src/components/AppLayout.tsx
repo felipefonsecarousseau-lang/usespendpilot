@@ -8,7 +8,8 @@ const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/scan", label: "Escanear Nota", icon: ScanLine },
   { to: "/expenses", label: "Contas Fixas", icon: FileText },
-  { to: "/family", label: "Família", icon: Users },
+  { to: "/familia", label: "Família", icon: Users },
+  { to: "/economia-supermercado", label: "Economia", icon: TrendingDown },
 ];
 
 const AppLayout = ({ children }: { children: ReactNode }) => {
