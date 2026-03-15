@@ -10,6 +10,7 @@ const navItems = [
   { to: "/expenses", label: "Contas Fixas", icon: FileText },
   { to: "/family", label: "Família", icon: Users },
   { to: "/economia-supermercado", label: "Economia", icon: TrendingDown },
+  { to: "/lista-inteligente", label: "Lista", icon: ShoppingCart },
 ];
 
 const AppLayout = ({ children }: { children: ReactNode }) => {
