@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X, ShoppingCart, TrendingDown, Store, Search, Lightbulb } from "lucide-react";
+import { Plus, X, ShoppingCart, TrendingDown, Store, Search, Lightbulb, Sparkles, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "@/components/AppLayout";
