@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, ScanLine, FileText, Users, LogOut } from "lucide-react";
+import { LayoutDashboard, ScanLine, FileText, Users, LogOut, TrendingDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -9,6 +9,7 @@ const navItems = [
   { to: "/scan", label: "Escanear Nota", icon: ScanLine },
   { to: "/expenses", label: "Contas Fixas", icon: FileText },
   { to: "/family", label: "Família", icon: Users },
+  { to: "/economia-supermercado", label: "Economia", icon: TrendingDown },
 ];
 
 const AppLayout = ({ children }: { children: ReactNode }) => {
