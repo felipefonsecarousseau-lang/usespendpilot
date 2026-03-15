@@ -68,6 +68,112 @@ export type Database = {
         }
         Relationships: []
       }
+      receipt_items: {
+        Row: {
+          categoria: Database["public"]["Enums"]["product_category"]
+          id: string
+          nome_normalizado: string
+          nome_produto: string
+          preco_total: number
+          preco_unitario: number
+          quantidade: number
+          receipt_id: string
+        }
+        Insert: {
+          categoria?: Database["public"]["Enums"]["product_category"]
+          id?: string
+          nome_normalizado: string
+          nome_produto: string
+          preco_total?: number
+          preco_unitario?: number
+          quantidade?: number
+          receipt_id: string
+        }
+        Update: {
+          categoria?: Database["public"]["Enums"]["product_category"]
+          id?: string
+          nome_normalizado?: string
+          nome_produto?: string
+          preco_total?: number
+          preco_unitario?: number
+          quantidade?: number
+          receipt_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipt_items_receipt_id_fkey"
+            columns: ["receipt_id"]
+            isOneToOne: false
+            referencedRelation: "receipts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      receipts: {
+        Row: {
+          created_at: string
+          data_compra: string
+          id: string
+          imagem_url: string | null
+          store_id: string
+          user_id: string
+          valor_total: number
+        }
+        Insert: {
+          created_at?: string
+          data_compra?: string
+          id?: string
+          imagem_url?: string | null
+          store_id: string
+          user_id: string
+          valor_total?: number
+        }
+        Update: {
+          created_at?: string
+          data_compra?: string
+          id?: string
+          imagem_url?: string | null
+          store_id?: string
+          user_id?: string
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipts_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stores: {
+        Row: {
+          cnpj: string | null
+          created_at: string
+          endereco: string | null
+          id: string
+          nome: string
+          user_id: string
+        }
+        Insert: {
+          cnpj?: string | null
+          created_at?: string
+          endereco?: string | null
+          id?: string
+          nome: string
+          user_id: string
+        }
+        Update: {
+          cnpj?: string | null
+          created_at?: string
+          endereco?: string | null
+          id?: string
+          nome?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -76,7 +182,14 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      product_category:
+        | "mercado"
+        | "higiene"
+        | "limpeza"
+        | "bebidas"
+        | "padaria"
+        | "hortifruti"
+        | "outros"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -203,6 +316,16 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      product_category: [
+        "mercado",
+        "higiene",
+        "limpeza",
+        "bebidas",
+        "padaria",
+        "hortifruti",
+        "outros",
+      ],
+    },
   },
 } as const
