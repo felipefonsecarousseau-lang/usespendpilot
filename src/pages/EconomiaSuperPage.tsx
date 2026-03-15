@@ -342,15 +342,23 @@ const EconomiaSuperPage = () => {
                   </div>
                   <h2 className="text-lg font-semibold">Sugestões para Economizar</h2>
                 </div>
-                {suggestions.length === 0 ? (
+                {insights.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
                     Compre o mesmo produto em diferentes supermercados para receber sugestões.
                   </p>
                 ) : (
                   <div className="space-y-3">
-                    {suggestions.slice(0, 5).map((s, i) => (
-                      <div key={i} className="glass-card-inner p-3">
-                        <p className="text-sm text-foreground">{s.msg}</p>
+                    {insights.map((insight, i) => (
+                      <div key={i} className="glass-card-inner p-3 flex gap-2">
+                        <span className="text-base shrink-0">{insight.icone}</span>
+                        <div>
+                          <p className="text-sm text-foreground">{insight.mensagem}</p>
+                          {insight.impacto_estimado > 0 && (
+                            <p className="text-xs text-primary mt-1 currency-display">
+                              Impacto estimado: R$ {insight.impacto_estimado.toFixed(2).replace(".", ",")}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
