@@ -96,6 +96,7 @@ const ListaInteligentePage = () => {
         items: itemsRes.data || [],
         stores: storesRes.data || [],
         receiptStoreMap,
+        receipts,
       };
     },
   });
