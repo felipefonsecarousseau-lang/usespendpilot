@@ -37,12 +37,12 @@ const AuthPage = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 260, damping: 20 }}
-        className="w-full max-w-md"
-      >
+        className="w-full max-w-md">
+        
         <div className="glass-card p-8">
           <div className="mb-8 text-center">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              Lúmen
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">EconomizaAI
+
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
               Seu fluxo de caixa, sob controle.
@@ -57,8 +57,8 @@ const AuthPage = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="bg-secondary border-border"
-                required
-              />
+                required />
+              
             </div>
             <div>
               <Input
@@ -68,8 +68,8 @@ const AuthPage = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 className="bg-secondary border-border"
                 required
-                minLength={6}
-              />
+                minLength={6} />
+              
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Carregando..." : isLogin ? "Entrar" : "Criar conta"}
@@ -79,17 +79,17 @@ const AuthPage = () => {
           <div className="mt-6 text-center">
             <button
               onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              {isLogin
-                ? "Não tem conta? Cadastre-se"
-                : "Já tem conta? Faça login"}
+              className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              
+              {isLogin ?
+              "Não tem conta? Cadastre-se" :
+              "Já tem conta? Faça login"}
             </button>
           </div>
         </div>
       </motion.div>
-    </div>
-  );
+    </div>);
+
 };
 
 export default AuthPage;
