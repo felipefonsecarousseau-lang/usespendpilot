@@ -70,7 +70,7 @@ const ListaInteligentePage = () => {
 
       const { data: receipts, error: rErr } = await supabase
         .from("receipts")
-        .select("id, store_id")
+        .select("id, store_id, data_compra")
         .eq("user_id", user.id);
       if (rErr) throw rErr;
       if (!receipts?.length) return { items: [], stores: [], receiptStoreMap: {} };
