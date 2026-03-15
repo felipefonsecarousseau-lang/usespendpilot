@@ -132,14 +132,14 @@ const ListaInteligentePage = () => {
     const cutoffStr = cutoff.toISOString().split("T")[0];
 
     const recentReceiptIds = new Set(
-      (historyData as any).receipts
-        ?.filter((r: any) => r.data_compra >= cutoffStr)
-        .map((r: any) => r.id) || []
+      historyData.receipts
+        .filter((r) => r.data_compra >= cutoffStr)
+        .map((r) => r.id)
     );
 
     // Find the most recent receipt
-    const sortedReceipts = [...((historyData as any).receipts || [])].sort(
-      (a: any, b: any) => b.data_compra.localeCompare(a.data_compra)
+    const sortedReceipts = [...historyData.receipts].sort(
+      (a, b) => b.data_compra.localeCompare(a.data_compra)
     );
     const lastReceiptId = sortedReceipts[0]?.id;
     const lastReceiptItems = new Set(
