@@ -413,8 +413,4 @@ const EconomiaSuperPage = () => {
   );
 };
 
-function formatMoney(val: number) {
-  return `R$ ${val.toFixed(2).replace(".", ",")}`;
-}
-
 export default EconomiaSuperPage;
