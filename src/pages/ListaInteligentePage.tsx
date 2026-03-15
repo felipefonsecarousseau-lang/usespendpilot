@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X, ShoppingCart, TrendingDown, Store, Search, Lightbulb } from "lucide-react";
+import { Plus, X, ShoppingCart, TrendingDown, Store, Search, Lightbulb, Sparkles, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "@/components/AppLayout";
@@ -37,6 +37,7 @@ const ListaInteligentePage = () => {
   const [items, setItems] = useState<ListItem[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [inputQty, setInputQty] = useState(1);
+  const [generating, setGenerating] = useState(false);
 
   const addItem = () => {
     const nome = inputValue.trim();
@@ -69,10 +70,10 @@ const ListaInteligentePage = () => {
 
       const { data: receipts, error: rErr } = await supabase
         .from("receipts")
-        .select("id, store_id")
+        .select("id, store_id, data_compra")
         .eq("user_id", user.id);
       if (rErr) throw rErr;
-      if (!receipts?.length) return { items: [], stores: [], receiptStoreMap: {} };
+      if (!receipts?.length) return { items: [], stores: [], receiptStoreMap: {}, receipts: [] };
 
       const receiptIds = receipts.map((r) => r.id);
       const storeIds = [...new Set(receipts.map((r) => r.store_id))];
@@ -95,6 +96,7 @@ const ListaInteligentePage = () => {
         items: itemsRes.data || [],
         stores: storesRes.data || [],
         receiptStoreMap,
+        receipts,
       };
     },
   });
@@ -119,7 +121,72 @@ const ListaInteligentePage = () => {
       .slice(0, 5);
   }, [inputValue, knownProducts, items]);
 
-  // Analyze each list item against history
+  // Generate list from recent purchases
+  const generateFromHistory = () => {
+    if (!historyData?.items?.length || !historyData.receipts) return;
+    setGenerating(true);
+
+    // Get receipts from last 60 days
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 60);
+    const cutoffStr = cutoff.toISOString().split("T")[0];
+
+    const recentReceiptIds = new Set(
+      historyData.receipts
+        .filter((r) => r.data_compra >= cutoffStr)
+        .map((r) => r.id)
+    );
+
+    // Find the most recent receipt
+    const sortedReceipts = [...historyData.receipts].sort(
+      (a, b) => b.data_compra.localeCompare(a.data_compra)
+    );
+    const lastReceiptId = sortedReceipts[0]?.id;
+    const lastReceiptItems = new Set(
+      historyData.items
+        .filter((i) => i.receipt_id === lastReceiptId)
+        .map((i) => i.nome_normalizado)
+    );
+
+    // Count frequency in last 60 days
+    const freq = new Map<string, number>();
+    historyData.items.forEach((item) => {
+      if (!recentReceiptIds.has(item.receipt_id)) return;
+      freq.set(item.nome_normalizado, (freq.get(item.nome_normalizado) || 0) + 1);
+    });
+
+    // Select recurring products (freq >= 2 OR in last receipt)
+    const candidates = new Map<string, number>();
+    freq.forEach((count, nome) => {
+      if (count >= 2 || lastReceiptItems.has(nome)) {
+        candidates.set(nome, count);
+      }
+    });
+
+    // Also add last receipt items not yet counted
+    lastReceiptItems.forEach((nome) => {
+      if (!candidates.has(nome)) candidates.set(nome, 1);
+    });
+
+    // Sort by frequency, limit to 12
+    const sorted = [...candidates.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 12);
+
+    const newItems: ListItem[] = sorted
+      .filter(([nome]) => !items.some((i) => i.nome.toLowerCase() === nome.toLowerCase()))
+      .map(([nome]) => ({
+        id: crypto.randomUUID(),
+        nome,
+        quantidade: 1,
+      }));
+
+    setTimeout(() => {
+      setItems((prev) => [...prev, ...newItems]);
+      setGenerating(false);
+    }, 400);
+  };
+
   const analysis: ProductAnalysis[] = useMemo(() => {
     if (!historyData || !items.length) return [];
 
@@ -313,6 +380,28 @@ const ListaInteligentePage = () => {
             <Button onClick={addItem} size="icon">
               <Plus className="h-4 w-4" />
             </Button>
+          </div>
+
+          {/* Generate from history button */}
+          <div className="mt-4 flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={generateFromHistory}
+              disabled={generating || !historyData?.receipts?.length}
+              className="gap-2"
+            >
+              {generating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              Gerar lista baseada nas minhas últimas compras
+            </Button>
+            {!historyData?.receipts?.length && (
+              <span className="text-xs text-muted-foreground">
+                Envie notas fiscais primeiro
+              </span>
+            )}
           </div>
 
           {/* Item chips */}
