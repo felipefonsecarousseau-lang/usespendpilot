@@ -73,7 +73,7 @@ const ListaInteligentePage = () => {
         .select("id, store_id, data_compra")
         .eq("user_id", user.id);
       if (rErr) throw rErr;
-      if (!receipts?.length) return { items: [], stores: [], receiptStoreMap: {} };
+      if (!receipts?.length) return { items: [], stores: [], receiptStoreMap: {}, receipts: [] };
 
       const receiptIds = receipts.map((r) => r.id);
       const storeIds = [...new Set(receipts.map((r) => r.store_id))];
