@@ -13,6 +13,7 @@ import ManualExpensesPage from "./pages/ManualExpensesPage";
 import FamilyPage from "./pages/FamilyPage";
 import GoalDetailPage from "./pages/GoalDetailPage";
 import EconomiaSuperPage from "./pages/EconomiaSuperPage";
+import ListaInteligentePage from "./pages/ListaInteligentePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
