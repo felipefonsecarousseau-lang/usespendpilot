@@ -37,6 +37,7 @@ const ListaInteligentePage = () => {
   const [items, setItems] = useState<ListItem[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [inputQty, setInputQty] = useState(1);
+  const [generating, setGenerating] = useState(false);
 
   const addItem = () => {
     const nome = inputValue.trim();
