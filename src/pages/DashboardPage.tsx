@@ -374,6 +374,9 @@ const DashboardPage = () => {
                 {forecast.mensagem_saldo}
               </p>
             )}
+            {financialScore.score > 0 && (
+              <p className="text-sm mt-2 text-muted-foreground">{financialScore.insight}</p>
+            )}
           </motion.div>
         )}
       </div>
