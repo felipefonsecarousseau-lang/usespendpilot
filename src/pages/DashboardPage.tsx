@@ -1,11 +1,12 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { TrendingUp, AlertTriangle, Calendar, Wallet, Target, TrendingDown } from "lucide-react";
+import { TrendingUp, AlertTriangle, Calendar, Wallet, Target, TrendingDown, Activity } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "@/components/AppLayout";
 import { generateForecast } from "@/lib/financial-forecast";
+import { calculateFinancialScore, type ScoreLevel } from "@/lib/financial-score";
 
 const cardVariants = {
   initial: { opacity: 0, y: 20 },
