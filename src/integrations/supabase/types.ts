@@ -201,6 +201,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_plans: {
+        Row: {
+          billing_cycle: Database["public"]["Enums"]["billing_cycle"]
+          created_at: string
+          expires_at: string | null
+          id: string
+          plan_type: Database["public"]["Enums"]["plan_type"]
+          started_at: string
+          status: Database["public"]["Enums"]["plan_status"]
+          user_id: string
+        }
+        Insert: {
+          billing_cycle?: Database["public"]["Enums"]["billing_cycle"]
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan_type?: Database["public"]["Enums"]["plan_type"]
+          started_at?: string
+          status?: Database["public"]["Enums"]["plan_status"]
+          user_id: string
+        }
+        Update: {
+          billing_cycle?: Database["public"]["Enums"]["billing_cycle"]
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan_type?: Database["public"]["Enums"]["plan_type"]
+          started_at?: string
+          status?: Database["public"]["Enums"]["plan_status"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -209,6 +242,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      billing_cycle: "monthly" | "yearly"
+      plan_status: "active" | "cancelled" | "expired"
+      plan_type: "free" | "premium"
       product_category:
         | "mercado"
         | "higiene"
@@ -344,6 +380,9 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      billing_cycle: ["monthly", "yearly"],
+      plan_status: ["active", "cancelled", "expired"],
+      plan_type: ["free", "premium"],
       product_category: [
         "mercado",
         "higiene",
