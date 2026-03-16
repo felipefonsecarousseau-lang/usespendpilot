@@ -111,6 +111,11 @@ const DashboardPage = () => {
     [receipts, rendaMensal]
   );
 
+  const financialScore = useMemo(
+    () => calculateFinancialScore(receipts as any, rendaMensal),
+    [receipts, rendaMensal]
+  );
+
   // Build pie chart data from current month categories
   const spendingData = useMemo(() => {
     return forecast.previsao_por_categoria.map((c) => ({
