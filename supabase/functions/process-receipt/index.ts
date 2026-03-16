@@ -52,10 +52,35 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
     if (userError || !user) throw new Error("Unauthorized");
 
-    const { image_base64, image_url } = await req.json();
+    const body = await req.json();
+    const { image_base64, image_url } = body;
     if (!image_base64 && !image_url) {
       throw new Error("image_base64 or image_url is required");
     }
+
+    // Validate base64 size (max ~10MB decoded)
+    if (image_base64 && image_base64.length > 14_000_000) {
+      console.warn("Upload rejected: base64 payload too large", { user_id: user?.id });
+      return new Response(JSON.stringify({ error: "Arquivo muito grande. Máximo 10MB." }), {
+        status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Validate image_url if provided
+    if (image_url && typeof image_url === "string") {
+      try {
+        const parsed = new URL(image_url);
+        if (!["https:"].includes(parsed.protocol)) {
+          throw new Error("Only HTTPS URLs are allowed");
+        }
+      } catch {
+        return new Response(JSON.stringify({ error: "URL de imagem inválida." }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    console.log("Processing receipt", { user_id: user.id, has_base64: !!image_base64, has_url: !!image_url });
 
     // Build the content for the AI
     const imageContent = image_base64
@@ -234,6 +259,16 @@ Regras OBRIGATÓRIAS:
       .insert(itemsToInsert);
     if (itemsErr) throw itemsErr;
 
+    // Audit log
+    await supabaseAdmin.from("audit_logs").insert({
+      user_id: user.id,
+      action: "receipt_upload",
+      details: { receipt_id: receipt.id, store_id: storeId, items_count: receiptData.items.length, valor_total: receiptData.valor_total },
+      ip_address: req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || null,
+    });
+
+    console.log("Receipt processed successfully", { user_id: user.id, receipt_id: receipt.id });
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -246,7 +281,11 @@ Regras OBRIGATÓRIAS:
   } catch (e) {
     console.error("process-receipt error:", e);
     const message = e instanceof Error ? e.message : "Unknown error";
-    return new Response(JSON.stringify({ error: message }), {
+    // Sanitize error message - don't expose internal details
+    const safeMessage = message.includes("Unauthorized") || message.includes("Missing authorization")
+      ? message
+      : "Erro ao processar nota fiscal. Tente novamente.";
+    return new Response(JSON.stringify({ error: safeMessage }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
