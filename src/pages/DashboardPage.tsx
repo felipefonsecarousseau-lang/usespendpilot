@@ -84,7 +84,7 @@ const DashboardPage = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("receipts")
-        .select("valor_total, data_compra, receipt_items(categoria, preco_total)")
+        .select("valor_total, data_compra, store_id, stores(nome), receipt_items(categoria, preco_total, nome_normalizado, preco_unitario)")
         .order("data_compra", { ascending: false });
       if (error) throw error;
       return data ?? [];
