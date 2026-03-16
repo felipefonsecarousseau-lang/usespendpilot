@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "@/components/AppLayout";
 import { generateForecast } from "@/lib/financial-forecast";
 import { calculateFinancialScore, type ScoreLevel } from "@/lib/financial-score";
+import { generateRecommendations } from "@/lib/financial-advisor";
+import FinancialAdvisorCard from "@/components/FinancialAdvisorCard";
 
 const cardVariants = {
   initial: { opacity: 0, y: 20 },
@@ -82,7 +84,7 @@ const DashboardPage = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("receipts")
-        .select("valor_total, data_compra, receipt_items(categoria, preco_total)")
+        .select("valor_total, data_compra, store_id, stores(nome), receipt_items(categoria, preco_total, nome_normalizado, preco_unitario)")
         .order("data_compra", { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -113,6 +115,11 @@ const DashboardPage = () => {
 
   const financialScore = useMemo(
     () => calculateFinancialScore(receipts as any, rendaMensal),
+    [receipts, rendaMensal]
+  );
+
+  const recommendations = useMemo(
+    () => generateRecommendations(receipts as any, rendaMensal),
     [receipts, rendaMensal]
   );
 
@@ -379,6 +386,9 @@ const DashboardPage = () => {
             )}
           </motion.div>
         )}
+
+        {/* Financial Advisor */}
+        {hasData && <FinancialAdvisorCard recommendations={recommendations} />}
       </div>
     </AppLayout>
   );
