@@ -386,6 +386,9 @@ const DashboardPage = () => {
             )}
           </motion.div>
         )}
+
+        {/* Financial Advisor */}
+        {hasData && <FinancialAdvisorCard recommendations={recommendations} />}
       </div>
     </AppLayout>
   );
