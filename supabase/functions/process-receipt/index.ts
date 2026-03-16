@@ -259,16 +259,15 @@ Regras OBRIGATÓRIAS:
       .insert(itemsToInsert);
     if (itemsErr) throw itemsErr;
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        receipt_id: receipt.id,
-        store_id: storeId,
-        data: receiptData,
-      }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-    console.log("Receipt processed successfully", { user_id: user.id, receipt_id: receipt.id, items_count: receiptData.items.length });
+    // Audit log
+    await supabaseAdmin.from("audit_logs").insert({
+      user_id: user.id,
+      action: "receipt_upload",
+      details: { receipt_id: receipt.id, store_id: storeId, items_count: receiptData.items.length, valor_total: receiptData.valor_total },
+      ip_address: req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || null,
+    });
+
+    console.log("Receipt processed successfully", { user_id: user.id, receipt_id: receipt.id });
 
     return new Response(
       JSON.stringify({
