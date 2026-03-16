@@ -1,27 +1,11 @@
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { TrendingUp, AlertTriangle, Calendar } from "lucide-react";
+import { TrendingUp, AlertTriangle, Calendar, Wallet, Target, TrendingDown } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "@/components/AppLayout";
-
-const spendingData = [
-  { name: "Supermercado", value: 1850, color: "hsl(160, 84%, 39%)" },
-  { name: "Moradia", value: 2200, color: "hsl(160, 84%, 28%)" },
-  { name: "Restaurante", value: 680, color: "hsl(160, 60%, 50%)" },
-  { name: "Streaming", value: 77.80, color: "hsl(215, 16%, 46%)" },
-  { name: "Utilidades", value: 309.40, color: "hsl(215, 16%, 36%)" },
-  { name: "Transporte", value: 450, color: "hsl(160, 40%, 60%)" },
-  { name: "Cinema", value: 120, color: "hsl(215, 20%, 55%)" },
-];
-
-const totalGasto = spendingData.reduce((s, d) => s + d.value, 0);
-const mediaMensal = 5200;
-const excedeMédia = totalGasto > mediaMensal;
-
-const alertas = [
-  { icon: TrendingUp, text: "Gasto com Restaurante 22% acima da média", tipo: "warning" as const },
-  { icon: Calendar, text: "Conta de Luz vence em 2 dias", tipo: "info" as const },
-  { icon: AlertTriangle, text: "Supermercado: R$ 350 acima do previsto este mês", tipo: "warning" as const },
-];
+import { generateForecast } from "@/lib/financial-forecast";
 
 const cardVariants = {
   initial: { opacity: 0, y: 20 },
@@ -41,6 +25,9 @@ const formatCurrency = (val: number) => {
   );
 };
 
+const formatCurrencySimple = (val: number) =>
+  `R$ ${val.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
+
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload?.length) {
     return (
@@ -53,84 +40,229 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
+const CAT_COLORS: Record<string, string> = {
+  mercado: "hsl(160, 84%, 39%)",
+  higiene: "hsl(160, 84%, 28%)",
+  limpeza: "hsl(160, 60%, 50%)",
+  bebidas: "hsl(215, 16%, 46%)",
+  padaria: "hsl(215, 16%, 36%)",
+  hortifruti: "hsl(160, 40%, 60%)",
+  outros: "hsl(215, 20%, 55%)",
+};
+
+const CAT_LABELS: Record<string, string> = {
+  mercado: "Supermercado",
+  higiene: "Higiene",
+  limpeza: "Limpeza",
+  bebidas: "Bebidas",
+  padaria: "Padaria",
+  hortifruti: "Hortifruti",
+  outros: "Outros",
+};
+
 const DashboardPage = () => {
+  // Fetch receipts with items for the current user
+  const { data: receipts = [] } = useQuery({
+    queryKey: ["dashboard-receipts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("receipts")
+        .select("valor_total, data_compra, receipt_items(categoria, preco_total)")
+        .order("data_compra", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // Fetch family income
+  const { data: familyMembers = [] } = useQuery({
+    queryKey: ["dashboard-family"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("family_members")
+        .select("renda_mensal");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const rendaMensal = useMemo(
+    () => familyMembers.reduce((s, m) => s + Number(m.renda_mensal), 0),
+    [familyMembers]
+  );
+
+  const forecast = useMemo(
+    () => generateForecast(receipts as any, rendaMensal),
+    [receipts, rendaMensal]
+  );
+
+  // Build pie chart data from current month categories
+  const spendingData = useMemo(() => {
+    return forecast.previsao_por_categoria.map((c) => ({
+      name: CAT_LABELS[c.categoria] || c.categoria,
+      value: c.valor_previsto,
+      color: CAT_COLORS[c.categoria] || "hsl(215, 20%, 55%)",
+    }));
+  }, [forecast]);
+
+  const totalGasto = forecast.gasto_atual_mes;
+  const hasData = receipts.length > 0;
+
+  // Build alerts from forecast
+  const alertas = useMemo(() => {
+    const items: { icon: any; text: string; tipo: "warning" | "info" }[] = [];
+
+    if (forecast.saldo_previsto < 0) {
+      items.push({
+        icon: AlertTriangle,
+        text: `Atenção: previsão de deficit de ${formatCurrencySimple(Math.abs(forecast.saldo_previsto))} no final do mês.`,
+        tipo: "warning",
+      });
+    }
+
+    for (const t of forecast.tendencias.slice(0, 2)) {
+      items.push({
+        icon: TrendingUp,
+        text: `Gasto com ${CAT_LABELS[t.categoria] || t.categoria} aumentou ${t.variacao}% este mês.`,
+        tipo: "warning",
+      });
+    }
+
+    if (forecast.dias_restantes > 0 && forecast.dias_restantes <= 5) {
+      items.push({
+        icon: Calendar,
+        text: `Faltam apenas ${forecast.dias_restantes} dias para o fim do mês.`,
+        tipo: "info",
+      });
+    }
+
+    if (items.length === 0) {
+      items.push({
+        icon: TrendingDown,
+        text: "Seus gastos estão dentro do esperado este mês.",
+        tipo: "info",
+      });
+    }
+
+    return items;
+  }, [forecast]);
+
+  const now = new Date();
+  const monthName = now.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+
   return (
     <AppLayout>
       <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
         <div>
-          <p className="text-sm text-muted-foreground">Março 2026</p>
+          <p className="text-sm text-muted-foreground capitalize">{monthName}</p>
           <h1 className="text-lg font-medium text-muted-foreground mt-1">Gasto total do mês</h1>
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
           >
-            <p className={`text-5xl md:text-6xl font-bold tracking-tighter font-mono mt-2 ${
-              excedeMédia ? "text-accent" : "text-foreground"
-            }`}>
+            <p className="text-5xl md:text-6xl font-bold tracking-tighter font-mono mt-2 text-foreground">
               {formatCurrency(totalGasto)}
             </p>
-            {excedeMédia && (
-              <p className="text-xs text-accent mt-2 flex items-center gap-1">
-                <AlertTriangle className="h-3 w-3" />
-                R$ {(totalGasto - mediaMensal).toFixed(0)} acima da média mensal
+            {hasData && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Previsão até o fim do mês: {formatCurrencySimple(forecast.previsao_gasto_total)}
               </p>
             )}
           </motion.div>
         </div>
 
+        {/* Forecast cards */}
+        {hasData && rendaMensal > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <motion.div custom={0} variants={cardVariants} initial="initial" animate="animate" className="glass-card p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Wallet className="h-4 w-4 text-primary" />
+                <span className="text-xs text-muted-foreground">Saldo previsto</span>
+              </div>
+              <p className={`text-xl font-bold font-mono ${forecast.saldo_previsto < 0 ? "text-accent" : "text-primary"}`}>
+                {formatCurrencySimple(forecast.saldo_previsto)}
+              </p>
+            </motion.div>
+
+            <motion.div custom={1} variants={cardVariants} initial="initial" animate="animate" className="glass-card p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Target className="h-4 w-4 text-primary" />
+                <span className="text-xs text-muted-foreground">Média diária</span>
+              </div>
+              <p className="text-xl font-bold font-mono text-foreground">
+                {formatCurrencySimple(forecast.media_diaria_atual)}
+              </p>
+            </motion.div>
+
+            <motion.div custom={2} variants={cardVariants} initial="initial" animate="animate" className="glass-card p-4 col-span-2 md:col-span-1">
+              <div className="flex items-center gap-2 mb-1">
+                <Calendar className="h-4 w-4 text-primary" />
+                <span className="text-xs text-muted-foreground">Dias restantes</span>
+              </div>
+              <p className="text-xl font-bold font-mono text-foreground">{forecast.dias_restantes}</p>
+            </motion.div>
+          </div>
+        )}
+
         <div className="grid md:grid-cols-5 gap-6">
           {/* Donut Chart */}
           <motion.div
-            custom={0}
+            custom={3}
             variants={cardVariants}
             initial="initial"
             animate="animate"
             className="glass-card p-6 md:col-span-3"
           >
-            <h2 className="text-sm font-medium text-muted-foreground mb-4">Distribuição por categoria</h2>
-            <div className="flex flex-col sm:flex-row items-center gap-6">
-              <div className="w-48 h-48">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={spendingData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={55}
-                      outerRadius={80}
-                      strokeWidth={2}
-                      stroke="hsl(222, 47%, 2%)"
-                      dataKey="value"
-                    >
-                      {spendingData.map((entry, i) => (
-                        <Cell key={i} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<CustomTooltip />} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex-1 space-y-2">
-                {spendingData
-                  .sort((a, b) => b.value - a.value)
-                  .map((item, i) => (
-                    <div key={i} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                        <span className="text-muted-foreground">{item.name}</span>
+            <h2 className="text-sm font-medium text-muted-foreground mb-4">
+              {hasData ? "Previsão por categoria" : "Distribuição por categoria"}
+            </h2>
+            {spendingData.length > 0 ? (
+              <div className="flex flex-col sm:flex-row items-center gap-6">
+                <div className="w-48 h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={spendingData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={55}
+                        outerRadius={80}
+                        strokeWidth={2}
+                        stroke="hsl(222, 47%, 2%)"
+                        dataKey="value"
+                      >
+                        {spendingData.map((entry, i) => (
+                          <Cell key={i} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<CustomTooltip />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex-1 space-y-2">
+                  {spendingData
+                    .sort((a, b) => b.value - a.value)
+                    .map((item, i) => (
+                      <div key={i} className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                          <span className="text-muted-foreground">{item.name}</span>
+                        </div>
+                        <span className="font-mono text-xs">{formatCurrency(item.value)}</span>
                       </div>
-                      <span className="font-mono text-xs">{formatCurrency(item.value)}</span>
-                    </div>
-                  ))}
+                    ))}
+                </div>
               </div>
-            </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Sem dados de compras ainda. Escaneie uma nota fiscal para começar.</p>
+            )}
           </motion.div>
 
           {/* Alertas */}
           <motion.div
-            custom={1}
+            custom={4}
             variants={cardVariants}
             initial="initial"
             animate="animate"
@@ -156,33 +288,45 @@ const DashboardPage = () => {
           </motion.div>
         </div>
 
-        {/* Recent Transactions */}
-        <motion.div
-          custom={2}
-          variants={cardVariants}
-          initial="initial"
-          animate="animate"
-          className="glass-card p-6"
-        >
-          <h2 className="text-sm font-medium text-muted-foreground mb-4">Últimas transações</h2>
-          <div className="divide-y divide-border">
-            {[
-              { nome: "Supermercado Extra", cat: "Supermercado", valor: 287.50, data: "12 Mar" },
-              { nome: "iFood", cat: "Restaurante", valor: 68.90, data: "11 Mar" },
-              { nome: "Netflix", cat: "Streaming", valor: 55.90, data: "10 Mar" },
-              { nome: "Uber", cat: "Transporte", valor: 32.40, data: "10 Mar" },
-              { nome: "Farmácia Drogasil", cat: "Saúde", valor: 94.70, data: "09 Mar" },
-            ].map((t, i) => (
-              <div key={i} className="flex items-center justify-between py-3">
-                <div>
-                  <p className="text-sm font-medium">{t.nome}</p>
-                  <p className="text-xs text-muted-foreground">{t.cat} · {t.data}</p>
+        {/* Spending trends */}
+        {forecast.tendencias.length > 0 && (
+          <motion.div
+            custom={5}
+            variants={cardVariants}
+            initial="initial"
+            animate="animate"
+            className="glass-card p-6"
+          >
+            <h2 className="text-sm font-medium text-muted-foreground mb-4">Tendências de aumento</h2>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {forecast.tendencias.map((t, i) => (
+                <div key={i} className="flex items-center justify-between glass-card-inner p-3">
+                  <span className="text-sm text-muted-foreground">{CAT_LABELS[t.categoria] || t.categoria}</span>
+                  <span className="text-sm font-mono text-accent">+{t.variacao}%</span>
                 </div>
-                <span className="text-sm">{formatCurrency(t.valor)}</span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Forecast message */}
+        {hasData && (
+          <motion.div
+            custom={6}
+            variants={cardVariants}
+            initial="initial"
+            animate="animate"
+            className="glass-card p-6"
+          >
+            <h2 className="text-sm font-medium text-muted-foreground mb-3">Previsão financeira</h2>
+            <p className="text-sm text-muted-foreground">{forecast.mensagem_gasto}</p>
+            {rendaMensal > 0 && (
+              <p className={`text-sm mt-2 ${forecast.saldo_previsto < 0 ? "text-accent" : "text-primary"}`}>
+                {forecast.mensagem_saldo}
+              </p>
+            )}
+          </motion.div>
+        )}
       </div>
     </AppLayout>
   );
