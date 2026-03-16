@@ -52,10 +52,35 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
     if (userError || !user) throw new Error("Unauthorized");
 
-    const { image_base64, image_url } = await req.json();
+    const body = await req.json();
+    const { image_base64, image_url } = body;
     if (!image_base64 && !image_url) {
       throw new Error("image_base64 or image_url is required");
     }
+
+    // Validate base64 size (max ~10MB decoded)
+    if (image_base64 && image_base64.length > 14_000_000) {
+      console.warn("Upload rejected: base64 payload too large", { user_id: user?.id });
+      return new Response(JSON.stringify({ error: "Arquivo muito grande. Máximo 10MB." }), {
+        status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Validate image_url if provided
+    if (image_url && typeof image_url === "string") {
+      try {
+        const parsed = new URL(image_url);
+        if (!["https:"].includes(parsed.protocol)) {
+          throw new Error("Only HTTPS URLs are allowed");
+        }
+      } catch {
+        return new Response(JSON.stringify({ error: "URL de imagem inválida." }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    console.log("Processing receipt", { user_id: user.id, has_base64: !!image_base64, has_url: !!image_url });
 
     // Build the content for the AI
     const imageContent = image_base64
