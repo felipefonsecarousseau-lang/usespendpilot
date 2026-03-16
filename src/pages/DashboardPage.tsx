@@ -9,6 +9,8 @@ import { generateForecast } from "@/lib/financial-forecast";
 import { calculateFinancialScore, type ScoreLevel } from "@/lib/financial-score";
 import { generateRecommendations } from "@/lib/financial-advisor";
 import FinancialAdvisorCard from "@/components/FinancialAdvisorCard";
+import PremiumGate from "@/components/PremiumGate";
+import { usePremiumStatus } from "@/hooks/usePremiumStatus";
 
 const cardVariants = {
   initial: { opacity: 0, y: 20 },
@@ -344,51 +346,54 @@ const DashboardPage = () => {
           </motion.div>
         </div>
 
-        {/* Spending trends */}
-        {forecast.tendencias.length > 0 && (
-          <motion.div
-            custom={5}
-            variants={cardVariants}
-            initial="initial"
-            animate="animate"
-            className="glass-card p-6"
-          >
-            <h2 className="text-sm font-medium text-muted-foreground mb-4">Tendências de aumento</h2>
-            <div className="grid sm:grid-cols-2 gap-3">
-              {forecast.tendencias.map((t, i) => (
-                <div key={i} className="flex items-center justify-between glass-card-inner p-3">
-                  <span className="text-sm text-muted-foreground">{CAT_LABELS[t.categoria] || t.categoria}</span>
-                  <span className="text-sm font-mono text-accent">+{t.variacao}%</span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
+        {/* Premium sections */}
+        <PremiumGate inline>
+          {/* Spending trends */}
+          {forecast.tendencias.length > 0 && (
+            <motion.div
+              custom={5}
+              variants={cardVariants}
+              initial="initial"
+              animate="animate"
+              className="glass-card p-6"
+            >
+              <h2 className="text-sm font-medium text-muted-foreground mb-4">Tendências de aumento</h2>
+              <div className="grid sm:grid-cols-2 gap-3">
+                {forecast.tendencias.map((t, i) => (
+                  <div key={i} className="flex items-center justify-between glass-card-inner p-3">
+                    <span className="text-sm text-muted-foreground">{CAT_LABELS[t.categoria] || t.categoria}</span>
+                    <span className="text-sm font-mono text-accent">+{t.variacao}%</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
 
-        {/* Forecast message */}
-        {hasData && (
-          <motion.div
-            custom={6}
-            variants={cardVariants}
-            initial="initial"
-            animate="animate"
-            className="glass-card p-6"
-          >
-            <h2 className="text-sm font-medium text-muted-foreground mb-3">Previsão financeira</h2>
-            <p className="text-sm text-muted-foreground">{forecast.mensagem_gasto}</p>
-            {rendaMensal > 0 && (
-              <p className={`text-sm mt-2 ${forecast.saldo_previsto < 0 ? "text-accent" : "text-primary"}`}>
-                {forecast.mensagem_saldo}
-              </p>
-            )}
-            {financialScore.score > 0 && (
-              <p className="text-sm mt-2 text-muted-foreground">{financialScore.insight}</p>
-            )}
-          </motion.div>
-        )}
+          {/* Forecast message */}
+          {hasData && (
+            <motion.div
+              custom={6}
+              variants={cardVariants}
+              initial="initial"
+              animate="animate"
+              className="glass-card p-6"
+            >
+              <h2 className="text-sm font-medium text-muted-foreground mb-3">Previsão financeira</h2>
+              <p className="text-sm text-muted-foreground">{forecast.mensagem_gasto}</p>
+              {rendaMensal > 0 && (
+                <p className={`text-sm mt-2 ${forecast.saldo_previsto < 0 ? "text-accent" : "text-primary"}`}>
+                  {forecast.mensagem_saldo}
+                </p>
+              )}
+              {financialScore.score > 0 && (
+                <p className="text-sm mt-2 text-muted-foreground">{financialScore.insight}</p>
+              )}
+            </motion.div>
+          )}
 
-        {/* Financial Advisor */}
-        {hasData && <FinancialAdvisorCard recommendations={recommendations} />}
+          {/* Financial Advisor */}
+          {hasData && <FinancialAdvisorCard recommendations={recommendations} />}
+        </PremiumGate>
       </div>
     </AppLayout>
   );

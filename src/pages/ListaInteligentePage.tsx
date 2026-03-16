@@ -4,6 +4,7 @@ import { Plus, X, ShoppingCart, TrendingDown, Store, Search, Lightbulb, Sparkles
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "@/components/AppLayout";
+import PremiumGate from "@/components/PremiumGate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -308,6 +309,7 @@ const ListaInteligentePage = () => {
 
   return (
     <AppLayout>
+      <PremiumGate>
       <div className="max-w-4xl mx-auto space-y-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
@@ -640,6 +642,7 @@ const ListaInteligentePage = () => {
           </motion.div>
         )}
       </div>
+      </PremiumGate>
     </AppLayout>
   );
 };
