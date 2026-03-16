@@ -1,11 +1,12 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { TrendingUp, AlertTriangle, Calendar, Wallet, Target, TrendingDown } from "lucide-react";
+import { TrendingUp, AlertTriangle, Calendar, Wallet, Target, TrendingDown, Activity } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "@/components/AppLayout";
 import { generateForecast } from "@/lib/financial-forecast";
+import { calculateFinancialScore, type ScoreLevel } from "@/lib/financial-score";
 
 const cardVariants = {
   initial: { opacity: 0, y: 20 },
@@ -60,6 +61,20 @@ const CAT_LABELS: Record<string, string> = {
   outros: "Outros",
 };
 
+const SCORE_COLORS: Record<ScoreLevel, string> = {
+  critico: "text-destructive",
+  alerta: "text-accent",
+  bom: "text-primary",
+  excelente: "text-primary",
+};
+
+const SCORE_LABELS: Record<ScoreLevel, string> = {
+  critico: "Crítico",
+  alerta: "Alerta",
+  bom: "Bom",
+  excelente: "Excelente",
+};
+
 const DashboardPage = () => {
   // Fetch receipts with items for the current user
   const { data: receipts = [] } = useQuery({
@@ -93,6 +108,11 @@ const DashboardPage = () => {
 
   const forecast = useMemo(
     () => generateForecast(receipts as any, rendaMensal),
+    [receipts, rendaMensal]
+  );
+
+  const financialScore = useMemo(
+    () => calculateFinancialScore(receipts as any, rendaMensal),
     [receipts, rendaMensal]
   );
 
@@ -175,8 +195,37 @@ const DashboardPage = () => {
 
         {/* Forecast cards */}
         {hasData && rendaMensal > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Score card */}
             <motion.div custom={0} variants={cardVariants} initial="initial" animate="animate" className="glass-card p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Activity className="h-4 w-4 text-primary" />
+                <span className="text-xs text-muted-foreground">Score Financeiro</span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <p className={`text-2xl font-bold font-mono ${SCORE_COLORS[financialScore.nivel]}`}>
+                  {financialScore.score}
+                </p>
+                <span className={`text-xs ${SCORE_COLORS[financialScore.nivel]}`}>
+                  {SCORE_LABELS[financialScore.nivel]}
+                </span>
+              </div>
+              {/* Mini progress bar */}
+              <div className="w-full h-1.5 rounded-full bg-muted mt-2">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    financialScore.nivel === "excelente" || financialScore.nivel === "bom"
+                      ? "bg-primary"
+                      : financialScore.nivel === "alerta"
+                        ? "bg-accent"
+                        : "bg-destructive"
+                  }`}
+                  style={{ width: `${financialScore.score}%` }}
+                />
+              </div>
+            </motion.div>
+
+            <motion.div custom={1} variants={cardVariants} initial="initial" animate="animate" className="glass-card p-4">
               <div className="flex items-center gap-2 mb-1">
                 <Wallet className="h-4 w-4 text-primary" />
                 <span className="text-xs text-muted-foreground">Saldo previsto</span>
@@ -186,7 +235,7 @@ const DashboardPage = () => {
               </p>
             </motion.div>
 
-            <motion.div custom={1} variants={cardVariants} initial="initial" animate="animate" className="glass-card p-4">
+            <motion.div custom={2} variants={cardVariants} initial="initial" animate="animate" className="glass-card p-4">
               <div className="flex items-center gap-2 mb-1">
                 <Target className="h-4 w-4 text-primary" />
                 <span className="text-xs text-muted-foreground">Média diária</span>
@@ -196,7 +245,7 @@ const DashboardPage = () => {
               </p>
             </motion.div>
 
-            <motion.div custom={2} variants={cardVariants} initial="initial" animate="animate" className="glass-card p-4 col-span-2 md:col-span-1">
+            <motion.div custom={3} variants={cardVariants} initial="initial" animate="animate" className="glass-card p-4">
               <div className="flex items-center gap-2 mb-1">
                 <Calendar className="h-4 w-4 text-primary" />
                 <span className="text-xs text-muted-foreground">Dias restantes</span>
@@ -324,6 +373,9 @@ const DashboardPage = () => {
               <p className={`text-sm mt-2 ${forecast.saldo_previsto < 0 ? "text-accent" : "text-primary"}`}>
                 {forecast.mensagem_saldo}
               </p>
+            )}
+            {financialScore.score > 0 && (
+              <p className="text-sm mt-2 text-muted-foreground">{financialScore.insight}</p>
             )}
           </motion.div>
         )}
