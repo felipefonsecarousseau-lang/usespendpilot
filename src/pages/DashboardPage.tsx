@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "@/components/AppLayout";
 import { generateForecast } from "@/lib/financial-forecast";
 import { calculateFinancialScore, type ScoreLevel } from "@/lib/financial-score";
+import { generateRecommendations } from "@/lib/financial-advisor";
+import FinancialAdvisorCard from "@/components/FinancialAdvisorCard";
 
 const cardVariants = {
   initial: { opacity: 0, y: 20 },
