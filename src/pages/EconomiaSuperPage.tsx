@@ -183,6 +183,7 @@ const EconomiaSuperPage = () => {
 
   return (
     <AppLayout>
+      <PremiumGate>
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
