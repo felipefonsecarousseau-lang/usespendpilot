@@ -4,6 +4,7 @@ import { TrendingDown, Award, ShoppingCart, PiggyBank, SlidersHorizontal, Receip
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "@/components/AppLayout";
+import PremiumGate from "@/components/PremiumGate";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { generateInsights } from "@/lib/insights-engine";
