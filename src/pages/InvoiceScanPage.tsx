@@ -19,12 +19,27 @@ const InvoiceScanPage = () => {
 
   const categorias = ["Supermercado", "Restaurante", "Farmácia", "Vestuário", "Eletrônicos", "Outros"];
 
+  const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
-    if (f) {
-      setFile(f);
-      simulateOCR();
+    if (!f) return;
+
+    if (!ALLOWED_TYPES.includes(f.type)) {
+      toast.error("Tipo de arquivo não permitido. Envie JPG, PNG, WebP ou PDF.");
+      e.target.value = "";
+      return;
     }
+
+    if (f.size > MAX_FILE_SIZE) {
+      toast.error("Arquivo muito grande. O tamanho máximo é 10MB.");
+      e.target.value = "";
+      return;
+    }
+
+    setFile(f);
+    simulateOCR();
   };
 
   const simulateOCR = () => {

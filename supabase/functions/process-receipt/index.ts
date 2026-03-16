@@ -268,10 +268,25 @@ Regras OBRIGATÓRIAS:
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
+    console.log("Receipt processed successfully", { user_id: user.id, receipt_id: receipt.id, items_count: receiptData.items.length });
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        receipt_id: receipt.id,
+        store_id: storeId,
+        data: receiptData,
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   } catch (e) {
     console.error("process-receipt error:", e);
     const message = e instanceof Error ? e.message : "Unknown error";
-    return new Response(JSON.stringify({ error: message }), {
+    // Sanitize error message - don't expose internal details
+    const safeMessage = message.includes("Unauthorized") || message.includes("Missing authorization")
+      ? message
+      : "Erro ao processar nota fiscal. Tente novamente.";
+    return new Response(JSON.stringify({ error: safeMessage }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
