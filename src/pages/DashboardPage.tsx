@@ -9,6 +9,8 @@ import { generateForecast } from "@/lib/financial-forecast";
 import { calculateFinancialScore, type ScoreLevel } from "@/lib/financial-score";
 import { generateRecommendations } from "@/lib/financial-advisor";
 import FinancialAdvisorCard from "@/components/FinancialAdvisorCard";
+import PremiumGate from "@/components/PremiumGate";
+import { usePremiumStatus } from "@/hooks/usePremiumStatus";
 
 const cardVariants = {
   initial: { opacity: 0, y: 20 },
