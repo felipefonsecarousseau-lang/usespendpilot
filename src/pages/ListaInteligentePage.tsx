@@ -642,6 +642,7 @@ const ListaInteligentePage = () => {
           </motion.div>
         )}
       </div>
+      </PremiumGate>
     </AppLayout>
   );
 };

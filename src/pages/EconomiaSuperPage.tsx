@@ -411,6 +411,7 @@ const EconomiaSuperPage = () => {
           </div>
         )}
       </div>
+      </PremiumGate>
     </AppLayout>
   );
 };
