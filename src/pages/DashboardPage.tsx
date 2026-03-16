@@ -61,6 +61,20 @@ const CAT_LABELS: Record<string, string> = {
   outros: "Outros",
 };
 
+const SCORE_COLORS: Record<ScoreLevel, string> = {
+  critico: "text-destructive",
+  alerta: "text-accent",
+  bom: "text-primary",
+  excelente: "text-primary",
+};
+
+const SCORE_LABELS: Record<ScoreLevel, string> = {
+  critico: "Crítico",
+  alerta: "Alerta",
+  bom: "Bom",
+  excelente: "Excelente",
+};
+
 const DashboardPage = () => {
   // Fetch receipts with items for the current user
   const { data: receipts = [] } = useQuery({
