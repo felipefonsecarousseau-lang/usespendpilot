@@ -109,8 +109,19 @@ const DashboardPage = () => {
     },
   });
 
-  // Fetch all receipts for forecast/score (premium features)
-  const { data: allReceipts = [] } = useQuery({
+  // Fetch manual expenses for current month
+  const { data: manualExpenses = [] } = useQuery({
+    queryKey: ["dashboard-manual-expenses", currentMonthStart],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("manual_expenses")
+        .select("valor, categoria, nome, data")
+        .gte("data", currentMonthStart)
+        .lt("data", nextMonthStart);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
     queryKey: ["dashboard-all-receipts"],
     queryFn: async () => {
       const { data, error } = await supabase
