@@ -85,9 +85,10 @@ const SCORE_LABELS: Record<ScoreLevel, string> = {
 };
 
 const DashboardPage = () => {
+  const { needsOnboarding, isLoading: onboardingLoading } = useOnboarding();
+
   const now = new Date();
   const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
-  const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().split("T")[0];
 
   // Fixed expense occurrences for current month
   const { totals: fixedTotals } = useFixedExpenseOccurrences(currentMonthStart);
