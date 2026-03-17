@@ -55,7 +55,17 @@ serve(async (req) => {
 
     if (hasActiveSub) {
       const sub = subscriptions.data[0];
-      subscriptionEnd = new Date(sub.current_period_end * 1000).toISOString();
+      if (sub.current_period_end) {
+        try {
+          const endMs = typeof sub.current_period_end === 'number' 
+            ? sub.current_period_end * 1000 
+            : Number(sub.current_period_end) * 1000;
+          const endDate = new Date(endMs);
+          if (!isNaN(endDate.getTime())) {
+            subscriptionEnd = endDate.toISOString();
+          }
+        } catch (_) { /* ignore */ }
+      }
       interval = sub.items.data[0]?.price?.recurring?.interval ?? null;
     }
 
