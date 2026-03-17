@@ -40,13 +40,14 @@ const FALLBACK_COLORS = [
   "hsl(100, 60%, 45%)", "hsl(45, 85%, 55%)", "hsl(215, 16%, 56%)",
 ];
 
-type PeriodPreset = "7" | "30" | "90" | "custom";
+type PeriodPreset = "7" | "30" | "90" | "all" | "custom";
 type ExpenseType = "all" | "fixo" | "variavel";
 
 const periodLabels: Record<string, string> = {
   "7": "Últimos 7 dias",
   "30": "Últimos 30 dias",
   "90": "Últimos 3 meses",
+  all: "Todo o período",
   custom: "Personalizado",
 };
 
