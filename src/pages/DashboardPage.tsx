@@ -214,11 +214,7 @@ const DashboardPage = () => {
     return items;
   }, [forecast]);
 
-  const now = new Date();
-  const mesRef = forecast.mes_referencia;
-  const monthName = mesRef
-    ? new Date(mesRef + "-15").toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
-    : now.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  const monthName = now.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
 
   return (
     <AppLayout>
