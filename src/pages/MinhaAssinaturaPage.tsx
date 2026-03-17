@@ -186,7 +186,7 @@ const MinhaAssinaturaPage = () => {
                     Mudar para anual — Economize R$88,90
                   </Button>
                 )}
-              </Button>
+              </div>
             </div>
           )}
 
