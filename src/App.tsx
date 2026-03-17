@@ -55,6 +55,7 @@ function AppRoutes() {
       <Route path="/economia-supermercado" element={session ? <EconomiaSuperPage /> : <Navigate to="/" />} />
       <Route path="/lista-inteligente" element={session ? <ListaInteligentePage /> : <Navigate to="/" />} />
       <Route path="/premium" element={session ? <PremiumPage /> : <Navigate to="/" />} />
+      <Route path="/minha-assinatura" element={session ? <MinhaAssinaturaPage /> : <Navigate to="/" />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
