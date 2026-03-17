@@ -14,6 +14,7 @@ const formatCurrency = (val: number) =>
 
 const MinhaAssinaturaPage = () => {
   const { data: plan, isLoading } = useFullPlanStatus();
+  const { data: subscription } = useSubscriptionDetails();
   const queryClient = useQueryClient();
   const [checkoutLoading, setCheckoutLoading] = useState<"monthly" | "yearly" | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
