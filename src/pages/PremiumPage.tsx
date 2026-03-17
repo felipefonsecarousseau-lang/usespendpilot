@@ -178,7 +178,7 @@ const PremiumPage = () => {
               <Button
                 size="lg"
                 className="w-full max-w-xs gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
-                onClick={handleSubscribe}
+                onClick={() => handleSubscribe()}
                 disabled={loading || isLoading}
               >
                 {loading ? (
