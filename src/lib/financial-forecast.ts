@@ -139,9 +139,12 @@ export function generateForecast(
     }
   }
 
-  const mediaDiariaAtual = today > 0 ? gastoAtualMes / today : 0;
-  const previsaoGastoTotal =
-    gastoAtualMes + mediaDiariaAtual * diasRestantes;
+  const mediaDiariaAtual = mesFallback
+    ? 0
+    : (today > 0 ? gastoAtualMes / today : 0);
+  const previsaoGastoTotal = mesFallback
+    ? gastoAtualMes
+    : gastoAtualMes + mediaDiariaAtual * diasRestantes;
 
   // ── 4) Balance forecast ──
   const saldoPrevisto = rendaMensal - previsaoGastoTotal;
