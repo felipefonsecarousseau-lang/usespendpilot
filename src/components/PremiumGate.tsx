@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { Crown, TrendingUp, Brain, ShoppingCart, BarChart3, Sparkles } from "lucide-react";
+import { Crown, TrendingUp, Brain, ShoppingCart, BarChart3, Sparkles, GitCompareArrows } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePremiumStatus } from "@/hooks/usePremiumStatus";
 
@@ -8,6 +8,7 @@ const benefits = [
   { icon: Brain, label: "Consultor financeiro automático" },
   { icon: TrendingUp, label: "Previsões financeiras" },
   { icon: BarChart3, label: "Score de saúde financeira" },
+  { icon: GitCompareArrows, label: "Comparação de preços entre supermercados" },
   { icon: ShoppingCart, label: "Lista inteligente de compras" },
 ];
 
