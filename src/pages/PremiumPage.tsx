@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Crown, Check, Sparkles, Brain, TrendingUp, BarChart3, ShoppingCart, Lightbulb, LineChart, Percent, Loader2, Settings } from "lucide-react";
+import { Crown, Check, Sparkles, Brain, TrendingUp, BarChart3, ShoppingCart, Lightbulb, LineChart, Percent, Loader2, Settings, ArrowUpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import AppLayout from "@/components/AppLayout";
