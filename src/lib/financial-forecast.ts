@@ -21,6 +21,7 @@ export interface FinancialForecast {
   tendencias: SpendingTrend[];
   mensagem_gasto: string;
   mensagem_saldo: string;
+  mes_referencia: string | null; // null = current month, "YYYY-MM" = fallback month
 }
 
 interface ReceiptRow {
