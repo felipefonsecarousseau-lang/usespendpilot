@@ -80,9 +80,28 @@ const SCORE_LABELS: Record<ScoreLevel, string> = {
 };
 
 const DashboardPage = () => {
-  // Fetch receipts with items for the current user
+  const now = new Date();
+  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+  const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().split("T")[0];
+
+  // Fetch receipts with items for the current month only
   const { data: receipts = [] } = useQuery({
-    queryKey: ["dashboard-receipts"],
+    queryKey: ["dashboard-receipts", currentMonthStart],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("receipts")
+        .select("valor_total, data_compra, store_id, stores(nome), receipt_items(categoria, preco_total, nome_normalizado, preco_unitario)")
+        .gte("data_compra", currentMonthStart)
+        .lt("data_compra", nextMonthStart)
+        .order("data_compra", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // Fetch all receipts for forecast/score (premium features)
+  const { data: allReceipts = [] } = useQuery({
+    queryKey: ["dashboard-all-receipts"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("receipts")
@@ -110,32 +129,51 @@ const DashboardPage = () => {
     [familyMembers]
   );
 
+  // Current month: compute real totals from receipt_items
+  const { totalGasto, spendingData, topCategory } = useMemo(() => {
+    const catTotals: Record<string, number> = {};
+    let total = 0;
+
+    for (const r of receipts) {
+      for (const item of (r as any).receipt_items ?? []) {
+        const cat = item.categoria || "outros";
+        const preco = Number(item.preco_total) || 0;
+        if (preco <= 0) continue;
+        catTotals[cat] = (catTotals[cat] || 0) + preco;
+        total += preco;
+      }
+    }
+
+    const data = Object.entries(catTotals)
+      .map(([cat, value]) => ({
+        name: CAT_LABELS[cat] || cat,
+        value: Math.round(value * 100) / 100,
+        color: CAT_COLORS[cat] || "hsl(215, 20%, 55%)",
+        categoria: cat,
+      }))
+      .sort((a, b) => b.value - a.value);
+
+    const top = data.length > 0 ? data[0] : null;
+
+    return { totalGasto: Math.round(total * 100) / 100, spendingData: data, topCategory: top };
+  }, [receipts]);
+
+  const hasData = totalGasto > 0;
+
   const forecast = useMemo(
-    () => generateForecast(receipts as any, rendaMensal),
-    [receipts, rendaMensal]
+    () => generateForecast(allReceipts as any, rendaMensal),
+    [allReceipts, rendaMensal]
   );
 
   const financialScore = useMemo(
-    () => calculateFinancialScore(receipts as any, rendaMensal),
-    [receipts, rendaMensal]
+    () => calculateFinancialScore(allReceipts as any, rendaMensal),
+    [allReceipts, rendaMensal]
   );
 
   const recommendations = useMemo(
-    () => generateRecommendations(receipts as any, rendaMensal),
-    [receipts, rendaMensal]
+    () => generateRecommendations(allReceipts as any, rendaMensal),
+    [allReceipts, rendaMensal]
   );
-
-  // Build pie chart data from current month categories
-  const spendingData = useMemo(() => {
-    return forecast.previsao_por_categoria.map((c) => ({
-      name: CAT_LABELS[c.categoria] || c.categoria,
-      value: c.valor_previsto,
-      color: CAT_COLORS[c.categoria] || "hsl(215, 20%, 55%)",
-    }));
-  }, [forecast]);
-
-  const totalGasto = forecast.gasto_atual_mes;
-  const hasData = receipts.length > 0;
 
   // Build alerts from forecast
   const alertas = useMemo(() => {
@@ -176,11 +214,7 @@ const DashboardPage = () => {
     return items;
   }, [forecast]);
 
-  const now = new Date();
-  const mesRef = forecast.mes_referencia;
-  const monthName = mesRef
-    ? new Date(mesRef + "-15").toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
-    : now.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  const monthName = now.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
 
   return (
     <AppLayout>
@@ -197,9 +231,14 @@ const DashboardPage = () => {
             <p className="text-5xl md:text-6xl font-bold tracking-tighter font-mono mt-2 text-foreground">
               {formatCurrency(totalGasto)}
             </p>
-            {hasData && (
+            {hasData && rendaMensal > 0 && (
               <p className="text-xs text-muted-foreground mt-2">
-                Previsão até o fim do mês: {formatCurrencySimple(forecast.previsao_gasto_total)}
+                {topCategory && `Maior gasto: ${topCategory.name} (${formatCurrencySimple(topCategory.value)})`}
+              </p>
+            )}
+            {!hasData && (
+              <p className="text-sm text-muted-foreground mt-3">
+                Você ainda não registrou gastos neste mês.
               </p>
             )}
           </motion.div>

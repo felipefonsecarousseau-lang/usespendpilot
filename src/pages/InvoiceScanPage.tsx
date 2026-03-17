@@ -110,6 +110,7 @@ const InvoiceScanPage = () => {
         queryClient.invalidateQueries({ queryKey: ["gastos-receipt-items"] });
         queryClient.invalidateQueries({ queryKey: ["gastos-receipt-items-prev"] });
         queryClient.invalidateQueries({ queryKey: ["dashboard-receipts"] });
+        queryClient.invalidateQueries({ queryKey: ["dashboard-all-receipts"] });
 
         setItems(
           receipt.items.map((item: any) => ({
