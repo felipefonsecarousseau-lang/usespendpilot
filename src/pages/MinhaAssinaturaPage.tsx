@@ -1,11 +1,11 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Crown, Clock, Calendar, CreditCard, TrendingDown, Sparkles, Loader2, Settings, AlertTriangle, PiggyBank } from "lucide-react";
+import { Crown, Clock, Calendar, CreditCard, TrendingDown, Sparkles, Loader2, Settings, AlertTriangle, PiggyBank, ArrowUpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AppLayout from "@/components/AppLayout";
-import { useFullPlanStatus } from "@/hooks/usePremiumStatus";
+import { useFullPlanStatus, useSubscriptionDetails } from "@/hooks/usePremiumStatus";
 import { supabase } from "@/integrations/supabase/client";
 import { calculateUserSavings, type UserSavings } from "@/lib/savings-calculator";
 
