@@ -245,6 +245,9 @@ const DashboardPage = () => {
           </motion.div>
         </div>
 
+        {/* Monthly budget goal */}
+        <MonthlyBudgetCard totalGasto={totalGasto} currentMonthStart={currentMonthStart} />
+
         {/* Forecast cards */}
         {hasData && rendaMensal > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
