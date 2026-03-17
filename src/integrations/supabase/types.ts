@@ -243,9 +243,12 @@ export type Database = {
           created_at: string
           expires_at: string | null
           id: string
+          is_trial: boolean
           plan_type: Database["public"]["Enums"]["plan_type"]
           started_at: string
           status: Database["public"]["Enums"]["plan_status"]
+          trial_expires_at: string | null
+          trial_started_at: string | null
           user_id: string
         }
         Insert: {
@@ -253,9 +256,12 @@ export type Database = {
           created_at?: string
           expires_at?: string | null
           id?: string
+          is_trial?: boolean
           plan_type?: Database["public"]["Enums"]["plan_type"]
           started_at?: string
           status?: Database["public"]["Enums"]["plan_status"]
+          trial_expires_at?: string | null
+          trial_started_at?: string | null
           user_id: string
         }
         Update: {
@@ -263,9 +269,12 @@ export type Database = {
           created_at?: string
           expires_at?: string | null
           id?: string
+          is_trial?: boolean
           plan_type?: Database["public"]["Enums"]["plan_type"]
           started_at?: string
           status?: Database["public"]["Enums"]["plan_status"]
+          trial_expires_at?: string | null
+          trial_started_at?: string | null
           user_id?: string
         }
         Relationships: []
