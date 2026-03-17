@@ -21,6 +21,7 @@ export interface FinancialForecast {
   tendencias: SpendingTrend[];
   mensagem_gasto: string;
   mensagem_saldo: string;
+  mes_referencia: string | null; // null = current month, "YYYY-MM" = fallback month
 }
 
 interface ReceiptRow {
@@ -117,14 +118,33 @@ export function generateForecast(
   const currentReceipts = receipts.filter(
     (r) => monthKey(r.data_compra) === currentMonth
   );
-  const gastoAtualMes = currentReceipts.reduce(
+  let gastoAtualMes = currentReceipts.reduce(
     (s, r) => s + r.valor_total,
     0
   );
 
-  const mediaDiariaAtual = today > 0 ? gastoAtualMes / today : 0;
-  const previsaoGastoTotal =
-    gastoAtualMes + mediaDiariaAtual * diasRestantes;
+  // If no current month data, use the most recent month that has data
+  let mesFallback: string | null = null;
+  if (gastoAtualMes === 0 && relevant.length > 0) {
+    const sortedMonths = [...monthSet].sort().reverse();
+    if (sortedMonths.length > 0) {
+      mesFallback = sortedMonths[0];
+      const fallbackReceipts = receipts.filter(
+        (r) => monthKey(r.data_compra) === mesFallback
+      );
+      gastoAtualMes = fallbackReceipts.reduce(
+        (s, r) => s + r.valor_total,
+        0
+      );
+    }
+  }
+
+  const mediaDiariaAtual = mesFallback
+    ? 0
+    : (today > 0 ? gastoAtualMes / today : 0);
+  const previsaoGastoTotal = mesFallback
+    ? gastoAtualMes
+    : gastoAtualMes + mediaDiariaAtual * diasRestantes;
 
   // ── 4) Balance forecast ──
   const saldoPrevisto = rendaMensal - previsaoGastoTotal;
@@ -165,7 +185,10 @@ export function generateForecast(
     media_diaria_atual: Math.round(mediaDiariaAtual * 100) / 100,
     previsao_por_categoria,
     tendencias,
-    mensagem_gasto: `Se continuar nesse ritmo, você gastará aproximadamente ${fmt(previsaoGastoTotal)} neste mês.`,
+    mes_referencia: mesFallback,
+    mensagem_gasto: mesFallback
+      ? `Dados referentes ao mês mais recente com registros.`
+      : `Se continuar nesse ritmo, você gastará aproximadamente ${fmt(previsaoGastoTotal)} neste mês.`,
     mensagem_saldo: saldoPrevisto >= 0
       ? `Seu saldo estimado no final do mês é de ${fmt(saldoPrevisto)}.`
       : `Atenção: você pode fechar o mês com deficit de ${fmt(Math.abs(saldoPrevisto))}.`,
