@@ -106,6 +106,11 @@ const InvoiceScanPage = () => {
         setWarnings(data.warnings || []);
         setReceiptSaved(true);
 
+        // Invalidate expense-related queries so other pages reflect new data
+        queryClient.invalidateQueries({ queryKey: ["gastos-receipt-items"] });
+        queryClient.invalidateQueries({ queryKey: ["gastos-receipt-items-prev"] });
+        queryClient.invalidateQueries({ queryKey: ["dashboard-receipts"] });
+
         setItems(
           receipt.items.map((item: any) => ({
             nome_produto: item.nome_produto,
