@@ -179,10 +179,16 @@ const GastosDetalhadosPage = () => {
       const cat = item.categoria || "outros";
       map.set(cat, (map.get(cat) || 0) + Number(item.preco_total));
     });
-    if (expenseType !== "variavel") {
+    if (expenseType !== "variavel" && expenseType !== "manual") {
       fixedExpenses.forEach((exp: any) => {
         const cat = (exp.categoria || "Outros").toLowerCase();
         map.set(cat, (map.get(cat) || 0) + Number(exp.valor));
+      });
+    }
+    if (expenseType !== "variavel" && expenseType !== "fixo") {
+      manualExpenses.forEach((me: any) => {
+        const cat = (me.categoria || "outros").toLowerCase();
+        map.set(cat, (map.get(cat) || 0) + Number(me.valor));
       });
     }
     return new Map(map);
