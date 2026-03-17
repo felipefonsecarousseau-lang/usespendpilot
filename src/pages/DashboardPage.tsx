@@ -231,9 +231,14 @@ const DashboardPage = () => {
             <p className="text-5xl md:text-6xl font-bold tracking-tighter font-mono mt-2 text-foreground">
               {formatCurrency(totalGasto)}
             </p>
-            {hasData && (
+            {hasData && rendaMensal > 0 && (
               <p className="text-xs text-muted-foreground mt-2">
-                Previsão até o fim do mês: {formatCurrencySimple(forecast.previsao_gasto_total)}
+                {topCategory && `Maior gasto: ${topCategory.name} (${formatCurrencySimple(topCategory.value)})`}
+              </p>
+            )}
+            {!hasData && (
+              <p className="text-sm text-muted-foreground mt-3">
+                Você ainda não registrou gastos neste mês.
               </p>
             )}
           </motion.div>
