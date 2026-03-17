@@ -109,6 +109,20 @@ const DashboardPage = () => {
     },
   });
 
+  // Fetch manual expenses for current month
+  const { data: manualExpenses = [] } = useQuery({
+    queryKey: ["dashboard-manual-expenses", currentMonthStart],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("manual_expenses")
+        .select("valor, categoria, nome, data")
+        .gte("data", currentMonthStart)
+        .lt("data", nextMonthStart);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   // Fetch all receipts for forecast/score (premium features)
   const { data: allReceipts = [] } = useQuery({
     queryKey: ["dashboard-all-receipts"],
@@ -139,7 +153,7 @@ const DashboardPage = () => {
     [familyMembers]
   );
 
-  // Current month: compute real totals from receipt_items
+  // Current month: compute real totals from receipt_items + manual expenses
   const { totalGastoReceipts, spendingData, topCategory } = useMemo(() => {
     const catTotals: Record<string, number> = {};
     let total = 0;
@@ -154,6 +168,15 @@ const DashboardPage = () => {
       }
     }
 
+    // Include manual expenses in category breakdown
+    for (const me of manualExpenses) {
+      const cat = me.categoria || "outros";
+      const val = Number(me.valor) || 0;
+      if (val <= 0) continue;
+      catTotals[cat] = (catTotals[cat] || 0) + val;
+      total += val;
+    }
+
     const data = Object.entries(catTotals)
       .map(([cat, value]) => ({
         name: CAT_LABELS[cat] || cat,
@@ -166,7 +189,7 @@ const DashboardPage = () => {
     const top = data.length > 0 ? data[0] : null;
 
     return { totalGastoReceipts: Math.round(total * 100) / 100, spendingData: data, topCategory: top };
-  }, [receipts]);
+  }, [receipts, manualExpenses]);
 
   // Combined total: receipts + fixed expenses
   const totalGasto = totalGastoReceipts + fixedTotals.total;

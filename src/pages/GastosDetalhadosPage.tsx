@@ -41,7 +41,7 @@ const FALLBACK_COLORS = [
 ];
 
 type PeriodPreset = "7" | "30" | "90" | "all" | "custom";
-type ExpenseType = "all" | "fixo" | "variavel";
+type ExpenseType = "all" | "fixo" | "variavel" | "manual";
 
 const periodLabels: Record<string, string> = {
   "7": "Últimos 7 dias",
@@ -114,6 +114,23 @@ const GastosDetalhadosPage = () => {
     },
   });
 
+  // ─── Fetch manual expenses ───
+  const { data: manualExpenses = [], isLoading: loadingManual } = useQuery({
+    queryKey: ["gastos-manual-expenses", dateRange],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      const { data } = await supabase
+        .from("manual_expenses")
+        .select("*")
+        .eq("user_id", user.id)
+        .gte("data", format(dateRange.from, "yyyy-MM-dd"))
+        .lte("data", format(dateRange.to, "yyyy-MM-dd"));
+      return data || [];
+    },
+    refetchOnWindowFocus: true,
+  });
+
   // ─── Fetch fixed expenses ───
   const { data: fixedExpenses = [], isLoading: loadingFixed } = useQuery({
     queryKey: ["gastos-fixed"],
@@ -129,24 +146,31 @@ const GastosDetalhadosPage = () => {
   const categoryData = useMemo(() => {
     const map = new Map<string, number>();
 
-    if (expenseType !== "fixo") {
+    if (expenseType !== "fixo" && expenseType !== "manual") {
       receiptItems.forEach((item: any) => {
         const cat = item.categoria || "outros";
         map.set(cat, (map.get(cat) || 0) + Number(item.preco_total));
       });
     }
 
-    if (expenseType !== "variavel") {
+    if (expenseType !== "variavel" && expenseType !== "manual") {
       fixedExpenses.forEach((exp: any) => {
         const cat = (exp.categoria || "Outros").toLowerCase();
         map.set(cat, (map.get(cat) || 0) + Number(exp.valor));
       });
     }
 
+    if (expenseType !== "variavel" && expenseType !== "fixo") {
+      manualExpenses.forEach((me: any) => {
+        const cat = (me.categoria || "outros").toLowerCase();
+        map.set(cat, (map.get(cat) || 0) + Number(me.valor));
+      });
+    }
+
     return Array.from(map.entries())
       .map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }))
       .sort((a, b) => b.value - a.value);
-  }, [receiptItems, fixedExpenses, expenseType]);
+  }, [receiptItems, fixedExpenses, manualExpenses, expenseType]);
 
   // ─── Previous period aggregation for comparison ───
   const prevCategoryData = useMemo(() => {
@@ -155,10 +179,16 @@ const GastosDetalhadosPage = () => {
       const cat = item.categoria || "outros";
       map.set(cat, (map.get(cat) || 0) + Number(item.preco_total));
     });
-    if (expenseType !== "variavel") {
+    if (expenseType !== "variavel" && expenseType !== "manual") {
       fixedExpenses.forEach((exp: any) => {
         const cat = (exp.categoria || "Outros").toLowerCase();
         map.set(cat, (map.get(cat) || 0) + Number(exp.valor));
+      });
+    }
+    if (expenseType !== "variavel" && expenseType !== "fixo") {
+      manualExpenses.forEach((me: any) => {
+        const cat = (me.categoria || "outros").toLowerCase();
+        map.set(cat, (map.get(cat) || 0) + Number(me.valor));
       });
     }
     return new Map(map);
@@ -207,6 +237,20 @@ const GastosDetalhadosPage = () => {
         subMap.set(exp.nome, (subMap.get(exp.nome) || 0) + Number(exp.valor));
       });
 
+    // Manual expenses matching category
+    manualExpenses
+      .filter((me: any) => (me.categoria || "outros").toLowerCase() === selectedCategory)
+      .forEach((me: any) => {
+        items.push({
+          nome: me.nome || "Gasto manual",
+          valor: Number(me.valor),
+          data: me.data,
+          estabelecimento: me.tipo_pagamento ? `Manual (${me.tipo_pagamento})` : "Manual",
+        });
+        const key = me.nome || "Gasto manual";
+        subMap.set(key, (subMap.get(key) || 0) + Number(me.valor));
+      });
+
     const subChart = Array.from(subMap.entries())
       .map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }))
       .sort((a, b) => b.value - a.value)
@@ -215,9 +259,9 @@ const GastosDetalhadosPage = () => {
     items.sort((a, b) => b.valor - a.valor);
 
     return { items, subChart };
-  }, [selectedCategory, receiptItems, fixedExpenses]);
+  }, [selectedCategory, receiptItems, fixedExpenses, manualExpenses]);
 
-  const isLoading = loadingReceipts || loadingFixed;
+  const isLoading = loadingReceipts || loadingFixed || loadingManual;
   const isEmpty = categoryData.length === 0 && !isLoading;
 
   const getColor = (name: string, i: number) =>
@@ -301,6 +345,7 @@ const GastosDetalhadosPage = () => {
               <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="variavel">Variáveis</SelectItem>
               <SelectItem value="fixo">Fixos</SelectItem>
+              <SelectItem value="manual">Manuais</SelectItem>
             </SelectContent>
           </Select>
 
