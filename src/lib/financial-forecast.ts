@@ -51,7 +51,8 @@ function fmt(val: number) {
 export function generateForecast(
   receipts: ReceiptRow[],
   rendaMensal: number,
-  monthsBack = 6
+  monthsBack = 6,
+  fixedExpensesTotal = 0
 ): FinancialForecast {
   const now = new Date();
   const currentMonth = monthKey(now.toISOString());
@@ -121,7 +122,7 @@ export function generateForecast(
   let gastoAtualMes = currentReceipts.reduce(
     (s, r) => s + r.valor_total,
     0
-  );
+  ) + fixedExpensesTotal;
 
   // If no current month data, use the most recent month that has data
   let mesFallback: string | null = null;
