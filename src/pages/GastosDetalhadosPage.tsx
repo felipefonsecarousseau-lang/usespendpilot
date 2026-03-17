@@ -66,6 +66,9 @@ const GastosDetalhadosPage = () => {
 
   const dateRange = useMemo(() => {
     const now = new Date();
+    if (period === "all") {
+      return { from: new Date("2000-01-01"), to: now };
+    }
     if (period === "custom" && customFrom && customTo) {
       return { from: customFrom, to: customTo };
     }
