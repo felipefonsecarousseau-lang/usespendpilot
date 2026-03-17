@@ -182,7 +182,10 @@ export function generateForecast(
     media_diaria_atual: Math.round(mediaDiariaAtual * 100) / 100,
     previsao_por_categoria,
     tendencias,
-    mensagem_gasto: `Se continuar nesse ritmo, você gastará aproximadamente ${fmt(previsaoGastoTotal)} neste mês.`,
+    mes_referencia: mesFallback,
+    mensagem_gasto: mesFallback
+      ? `Dados referentes ao mês mais recente com registros.`
+      : `Se continuar nesse ritmo, você gastará aproximadamente ${fmt(previsaoGastoTotal)} neste mês.`,
     mensagem_saldo: saldoPrevisto >= 0
       ? `Seu saldo estimado no final do mês é de ${fmt(saldoPrevisto)}.`
       : `Atenção: você pode fechar o mês com deficit de ${fmt(Math.abs(saldoPrevisto))}.`,
