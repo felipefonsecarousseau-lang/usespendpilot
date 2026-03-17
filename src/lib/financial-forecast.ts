@@ -122,7 +122,7 @@ export function generateForecast(
   let gastoAtualMes = currentReceipts.reduce(
     (s, r) => s + r.valor_total,
     0
-  );
+  ) + fixedExpensesTotal;
 
   // If no current month data, use the most recent month that has data
   let mesFallback: string | null = null;
