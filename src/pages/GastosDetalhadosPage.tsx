@@ -114,6 +114,23 @@ const GastosDetalhadosPage = () => {
     },
   });
 
+  // ─── Fetch manual expenses ───
+  const { data: manualExpenses = [], isLoading: loadingManual } = useQuery({
+    queryKey: ["gastos-manual-expenses", dateRange],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      const { data } = await supabase
+        .from("manual_expenses")
+        .select("*")
+        .eq("user_id", user.id)
+        .gte("data", format(dateRange.from, "yyyy-MM-dd"))
+        .lte("data", format(dateRange.to, "yyyy-MM-dd"));
+      return data || [];
+    },
+    refetchOnWindowFocus: true,
+  });
+
   // ─── Fetch fixed expenses ───
   const { data: fixedExpenses = [], isLoading: loadingFixed } = useQuery({
     queryKey: ["gastos-fixed"],
@@ -129,24 +146,31 @@ const GastosDetalhadosPage = () => {
   const categoryData = useMemo(() => {
     const map = new Map<string, number>();
 
-    if (expenseType !== "fixo") {
+    if (expenseType !== "fixo" && expenseType !== "manual") {
       receiptItems.forEach((item: any) => {
         const cat = item.categoria || "outros";
         map.set(cat, (map.get(cat) || 0) + Number(item.preco_total));
       });
     }
 
-    if (expenseType !== "variavel") {
+    if (expenseType !== "variavel" && expenseType !== "manual") {
       fixedExpenses.forEach((exp: any) => {
         const cat = (exp.categoria || "Outros").toLowerCase();
         map.set(cat, (map.get(cat) || 0) + Number(exp.valor));
       });
     }
 
+    if (expenseType !== "variavel" && expenseType !== "fixo") {
+      manualExpenses.forEach((me: any) => {
+        const cat = (me.categoria || "outros").toLowerCase();
+        map.set(cat, (map.get(cat) || 0) + Number(me.valor));
+      });
+    }
+
     return Array.from(map.entries())
       .map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }))
       .sort((a, b) => b.value - a.value);
-  }, [receiptItems, fixedExpenses, expenseType]);
+  }, [receiptItems, fixedExpenses, manualExpenses, expenseType]);
 
   // ─── Previous period aggregation for comparison ───
   const prevCategoryData = useMemo(() => {
