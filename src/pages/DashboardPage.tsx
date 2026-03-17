@@ -10,8 +10,10 @@ import { calculateFinancialScore, type ScoreLevel } from "@/lib/financial-score"
 import { generateRecommendations } from "@/lib/financial-advisor";
 import FinancialAdvisorCard from "@/components/FinancialAdvisorCard";
 import MonthlyBudgetCard from "@/components/MonthlyBudgetCard";
+import FixedExpensesDashboardCard from "@/components/FixedExpensesDashboardCard";
 import PremiumGate from "@/components/PremiumGate";
 import { usePremiumStatus } from "@/hooks/usePremiumStatus";
+import { useFixedExpenseOccurrences } from "@/hooks/useFixedExpenseOccurrences";
 
 const cardVariants = {
   initial: { opacity: 0, y: 20 },
