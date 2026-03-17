@@ -87,6 +87,9 @@ const DashboardPage = () => {
   const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
   const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().split("T")[0];
 
+  // Fixed expense occurrences for current month
+  const { totals: fixedTotals } = useFixedExpenseOccurrences(currentMonthStart);
+
   // Fetch receipts with items for the current month only
   const { data: receipts = [] } = useQuery({
     queryKey: ["dashboard-receipts", currentMonthStart],
