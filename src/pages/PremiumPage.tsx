@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Crown, Check, Sparkles, Brain, TrendingUp, BarChart3, ShoppingCart, Lightbulb, LineChart, Percent, Loader2, Settings } from "lucide-react";
+import { Crown, Check, Sparkles, Brain, TrendingUp, BarChart3, ShoppingCart, Lightbulb, LineChart, Percent, Loader2, Settings, ArrowUpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import AppLayout from "@/components/AppLayout";
@@ -46,11 +46,11 @@ const PremiumPage = () => {
   const period = cycle === "monthly" ? "mês" : "ano";
   const savings = cycle === "yearly" ? "Economize R$88,90/ano" : null;
 
-  const handleSubscribe = async () => {
+  const handleSubscribe = async (overrideCycle?: Cycle) => {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { cycle },
+        body: { cycle: overrideCycle ?? cycle },
       });
       if (error) throw error;
       if (data?.url) {
@@ -142,15 +142,27 @@ const PremiumPage = () => {
                   Próxima renovação: {new Date(subscription.subscription_end).toLocaleDateString("pt-BR")}
                 </p>
               )}
-              <Button
-                variant="outline"
-                className="gap-2"
-                onClick={handleManageSubscription}
-                disabled={portalLoading}
-              >
-                {portalLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Settings className="h-4 w-4" />}
-                Gerenciar assinatura
-              </Button>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  onClick={handleManageSubscription}
+                  disabled={portalLoading}
+                >
+                  {portalLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Settings className="h-4 w-4" />}
+                  Gerenciar assinatura
+                </Button>
+                {subscription?.interval === "month" && (
+                  <Button
+                    className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+                    onClick={() => handleSubscribe()}
+                    disabled={loading}
+                  >
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUpCircle className="h-4 w-4" />}
+                    Mudar para anual — Economize R$88,90
+                  </Button>
+                )}
+              </div>
             </div>
           ) : (
             <>
@@ -166,7 +178,7 @@ const PremiumPage = () => {
               <Button
                 size="lg"
                 className="w-full max-w-xs gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
-                onClick={handleSubscribe}
+                onClick={() => handleSubscribe()}
                 disabled={loading || isLoading}
               >
                 {loading ? (
