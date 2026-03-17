@@ -51,7 +51,8 @@ function fmt(val: number) {
 export function generateForecast(
   receipts: ReceiptRow[],
   rendaMensal: number,
-  monthsBack = 6
+  monthsBack = 6,
+  fixedExpensesTotal = 0
 ): FinancialForecast {
   const now = new Date();
   const currentMonth = monthKey(now.toISOString());
