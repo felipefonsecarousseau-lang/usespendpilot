@@ -7,10 +7,13 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const VALID_CATEGORIES = ["mercado", "higiene", "limpeza", "bebidas", "padaria", "hortifruti", "outros"] as const;
+type ProductCategory = typeof VALID_CATEGORIES[number];
+
 interface ReceiptItem {
   nome_produto: string;
   nome_normalizado: string;
-  categoria: string;
+  categoria: ProductCategory;
   quantidade: number;
   preco_unitario: number;
   preco_total: number;
@@ -23,6 +26,104 @@ interface ReceiptData {
   items: ReceiptItem[];
 }
 
+// --- Validation & Post-processing ---
+
+function validateAndCleanReceipt(raw: any): { data: ReceiptData; warnings: string[] } {
+  const warnings: string[] = [];
+
+  if (!raw || typeof raw !== "object") throw new Error("Resposta do AI não é um objeto válido");
+  if (!raw.store?.nome) throw new Error("Nome do estabelecimento ausente");
+  if (!Array.isArray(raw.items) || raw.items.length === 0) throw new Error("Nenhum item encontrado na nota");
+
+  // Validate date
+  let dataPurchase = raw.data_compra || new Date().toISOString().split("T")[0];
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dataPurchase)) {
+    warnings.push(`Data inválida "${raw.data_compra}", usando data atual`);
+    dataPurchase = new Date().toISOString().split("T")[0];
+  }
+
+  // Clean and validate items
+  const seen = new Map<string, number>(); // key -> index for dedup
+  const cleanItems: ReceiptItem[] = [];
+
+  for (const item of raw.items) {
+    if (!item.nome_produto && !item.nome_normalizado) {
+      warnings.push("Item sem nome ignorado");
+      continue;
+    }
+
+    const nome_produto = String(item.nome_produto || item.nome_normalizado).trim();
+    const nome_normalizado = String(item.nome_normalizado || item.nome_produto).trim();
+    let quantidade = Math.max(Number(item.quantidade) || 1, 1);
+    let preco_unitario = Math.abs(Number(item.preco_unitario) || 0);
+    let preco_total = Math.abs(Number(item.preco_total) || 0);
+
+    // Fix price inconsistencies
+    if (preco_total > 0 && preco_unitario > 0) {
+      const expected = Math.round(quantidade * preco_unitario * 100) / 100;
+      if (Math.abs(expected - preco_total) > 0.02) {
+        // Trust preco_total and recalculate unitario
+        warnings.push(`Preço inconsistente para "${nome_normalizado}": ${quantidade}×${preco_unitario}≠${preco_total}, recalculando`);
+        preco_unitario = Math.round((preco_total / quantidade) * 100) / 100;
+      }
+    } else if (preco_total > 0 && preco_unitario === 0) {
+      preco_unitario = Math.round((preco_total / quantidade) * 100) / 100;
+    } else if (preco_unitario > 0 && preco_total === 0) {
+      preco_total = Math.round(quantidade * preco_unitario * 100) / 100;
+    }
+
+    if (preco_total === 0) {
+      warnings.push(`Item "${nome_normalizado}" com preço zero ignorado`);
+      continue;
+    }
+
+    // Validate category
+    let categoria: ProductCategory = "outros";
+    if (VALID_CATEGORIES.includes(item.categoria as ProductCategory)) {
+      categoria = item.categoria as ProductCategory;
+    } else {
+      warnings.push(`Categoria inválida "${item.categoria}" para "${nome_normalizado}", usando "outros"`);
+    }
+
+    // Dedup by normalized name
+    const dedupKey = nome_normalizado.toLowerCase();
+    if (seen.has(dedupKey)) {
+      const existingIdx = seen.get(dedupKey)!;
+      const existing = cleanItems[existingIdx];
+      warnings.push(`Duplicata "${nome_normalizado}" mesclada`);
+      existing.quantidade += quantidade;
+      existing.preco_total = Math.round((existing.preco_total + preco_total) * 100) / 100;
+      existing.preco_unitario = Math.round((existing.preco_total / existing.quantidade) * 100) / 100;
+      continue;
+    }
+
+    seen.set(dedupKey, cleanItems.length);
+    cleanItems.push({ nome_produto, nome_normalizado, categoria, quantidade, preco_unitario, preco_total });
+  }
+
+  if (cleanItems.length === 0) throw new Error("Nenhum item válido após limpeza");
+
+  // Recalculate total if it doesn't match
+  const computedTotal = Math.round(cleanItems.reduce((s, i) => s + i.preco_total, 0) * 100) / 100;
+  let valorTotal = Math.abs(Number(raw.valor_total) || 0);
+  if (valorTotal === 0 || Math.abs(valorTotal - computedTotal) > 1) {
+    if (valorTotal > 0) warnings.push(`Total da nota (${valorTotal}) difere da soma dos itens (${computedTotal}), usando soma`);
+    valorTotal = computedTotal;
+  }
+
+  return {
+    data: {
+      store: { nome: String(raw.store.nome).trim(), cnpj: raw.store.cnpj ? String(raw.store.cnpj).trim() : null },
+      data_compra: dataPurchase,
+      valor_total: valorTotal,
+      items: cleanItems,
+    },
+    warnings,
+  };
+}
+
+// --- Main handler ---
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -34,18 +135,12 @@ serve(async (req) => {
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-      throw new Error("Supabase environment variables not configured");
-    }
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) throw new Error("Supabase environment variables not configured");
 
-    // Get auth token from request
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("Missing authorization header");
 
-    // Create admin client for DB operations
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
-    // Create user client to get user id
     const supabaseUser = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -54,25 +149,18 @@ serve(async (req) => {
 
     const body = await req.json();
     const { image_base64, image_url } = body;
-    if (!image_base64 && !image_url) {
-      throw new Error("image_base64 or image_url is required");
-    }
+    if (!image_base64 && !image_url) throw new Error("image_base64 or image_url is required");
 
-    // Validate base64 size (max ~10MB decoded)
     if (image_base64 && image_base64.length > 14_000_000) {
-      console.warn("Upload rejected: base64 payload too large", { user_id: user?.id });
       return new Response(JSON.stringify({ error: "Arquivo muito grande. Máximo 10MB." }), {
         status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Validate image_url if provided
     if (image_url && typeof image_url === "string") {
       try {
         const parsed = new URL(image_url);
-        if (!["https:"].includes(parsed.protocol)) {
-          throw new Error("Only HTTPS URLs are allowed");
-        }
+        if (!["https:"].includes(parsed.protocol)) throw new Error("Only HTTPS URLs allowed");
       } catch {
         return new Response(JSON.stringify({ error: "URL de imagem inválida." }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -80,27 +168,34 @@ serve(async (req) => {
       }
     }
 
-    console.log("Processing receipt", { user_id: user.id, has_base64: !!image_base64, has_url: !!image_url });
+    console.log("[OCR] Starting receipt processing", { user_id: user.id, has_base64: !!image_base64, has_url: !!image_url });
 
-    // Build the content for the AI
     const imageContent = image_base64
       ? { type: "image_url" as const, image_url: { url: `data:image/jpeg;base64,${image_base64}` } }
       : { type: "image_url" as const, image_url: { url: image_url } };
 
-    const systemPrompt = `Você é um especialista em leitura de notas fiscais brasileiras. Analise a imagem da nota fiscal e extraia todos os dados.
+    const systemPrompt = `Você é um especialista em leitura de notas fiscais brasileiras. Analise a imagem e extraia TODOS os dados com máxima precisão.
 
-Regras OBRIGATÓRIAS:
+REGRAS OBRIGATÓRIAS:
 - Extraia o nome do estabelecimento e CNPJ (se visível).
 - Extraia a data da compra no formato YYYY-MM-DD.
 - Extraia o valor total da nota.
-- Para cada produto, extraia: nome original, quantidade, preço unitário e preço total.
+- Para cada produto REAL comprado, extraia: nome original, quantidade, preço unitário e preço total.
 - Se a quantidade > 1, o preço unitário = preço_total / quantidade. NÃO confunda subtotal com preço unitário.
-- Ignore linhas que NÃO são produtos: CPF, troco, subtotal, forma de pagamento, impostos, etc.
-- Normalize o nome do produto: "ARROZ T1 5KG" → "Arroz 5kg", "DET LIMPOL 500ML" → "Detergente Limpol 500ml".
-- Categorize cada produto usando APENAS estas categorias: mercado, higiene, limpeza, bebidas, padaria, hortifruti, outros.
-- Se não conseguir identificar a categoria, use "outros".`;
+- Se a quantidade não estiver explícita, assuma 1.
+- Se houver apenas preço total, use como unitário quando quantidade = 1.
 
-    // Call Lovable AI with tool calling for structured output
+IGNORE COMPLETAMENTE:
+- Linhas de CPF, troco, subtotal geral, forma de pagamento, impostos, separadores visuais.
+
+NORMALIZAÇÃO DE NOMES:
+- Remova códigos internos do produto.
+- Padronize: "ARROZ T1 5KG" → "Arroz 5kg", "DET LIMPOL 500ML" → "Detergente Limpol 500ml", "REF COCA 2L" → "Refrigerante Coca-Cola 2L".
+
+CATEGORIZAÇÃO (use APENAS estas):
+mercado, higiene, limpeza, bebidas, padaria, hortifruti, outros.
+Se não souber a categoria, use "outros".`;
+
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -145,11 +240,8 @@ Regras OBRIGATÓRIAS:
                       type: "object",
                       properties: {
                         nome_produto: { type: "string", description: "Nome original do produto na nota" },
-                        nome_normalizado: { type: "string", description: "Nome normalizado e legível do produto" },
-                        categoria: {
-                          type: "string",
-                          enum: ["mercado", "higiene", "limpeza", "bebidas", "padaria", "hortifruti", "outros"],
-                        },
+                        nome_normalizado: { type: "string", description: "Nome normalizado e legível" },
+                        categoria: { type: "string", enum: ["mercado", "higiene", "limpeza", "bebidas", "padaria", "hortifruti", "outros"] },
                         quantidade: { type: "number" },
                         preco_unitario: { type: "number" },
                         preco_total: { type: "number" },
@@ -182,68 +274,82 @@ Regras OBRIGATÓRIAS:
         });
       }
       const errText = await aiResponse.text();
-      console.error("AI gateway error:", status, errText);
+      console.error("[OCR] AI gateway error:", status, errText);
       throw new Error(`AI gateway error: ${status}`);
     }
 
     const aiResult = await aiResponse.json();
     const toolCall = aiResult.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall) throw new Error("AI did not return structured data");
 
-    const receiptData: ReceiptData = JSON.parse(toolCall.function.arguments);
+    // Log raw AI response for debugging
+    console.log("[OCR] Raw AI tool_call arguments:", toolCall?.function?.arguments?.substring(0, 2000));
+
+    if (!toolCall) {
+      console.error("[OCR] AI did not return tool call. Full response:", JSON.stringify(aiResult).substring(0, 1000));
+      return new Response(JSON.stringify({
+        error: "Não conseguimos interpretar a nota fiscal. Tente uma foto mais nítida.",
+        partial: true,
+      }), { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    let rawParsed: any;
+    try {
+      rawParsed = JSON.parse(toolCall.function.arguments);
+    } catch (parseErr) {
+      console.error("[OCR] JSON parse error:", parseErr, "Raw:", toolCall.function.arguments?.substring(0, 500));
+      return new Response(JSON.stringify({
+        error: "Erro ao interpretar os dados da nota. Tente novamente.",
+        partial: true,
+      }), { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // Validate and clean
+    let receiptData: ReceiptData;
+    let warnings: string[] = [];
+    try {
+      const result = validateAndCleanReceipt(rawParsed);
+      receiptData = result.data;
+      warnings = result.warnings;
+      if (warnings.length > 0) {
+        console.log("[OCR] Validation warnings:", warnings);
+      }
+    } catch (validationErr) {
+      console.error("[OCR] Validation failed:", validationErr, "Raw data:", JSON.stringify(rawParsed).substring(0, 1000));
+      return new Response(JSON.stringify({
+        error: `Nota fiscal com dados incompletos: ${(validationErr as Error).message}`,
+        partial: true,
+        raw_data: rawParsed,
+      }), { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    console.log("[OCR] Validated receipt:", { store: receiptData.store.nome, items: receiptData.items.length, total: receiptData.valor_total });
 
     // --- Save to database ---
-
-    // 1. Upsert store by CNPJ (or insert if no CNPJ)
     let storeId: string;
     if (receiptData.store.cnpj) {
       const { data: existingStore } = await supabaseAdmin
-        .from("stores")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("cnpj", receiptData.store.cnpj)
-        .maybeSingle();
-
+        .from("stores").select("id").eq("user_id", user.id).eq("cnpj", receiptData.store.cnpj).maybeSingle();
       if (existingStore) {
         storeId = existingStore.id;
-        // Update name if needed
-        await supabaseAdmin
-          .from("stores")
-          .update({ nome: receiptData.store.nome })
-          .eq("id", storeId);
+        await supabaseAdmin.from("stores").update({ nome: receiptData.store.nome }).eq("id", storeId);
       } else {
         const { data: newStore, error: storeErr } = await supabaseAdmin
-          .from("stores")
-          .insert({ user_id: user.id, nome: receiptData.store.nome, cnpj: receiptData.store.cnpj })
-          .select("id")
-          .single();
+          .from("stores").insert({ user_id: user.id, nome: receiptData.store.nome, cnpj: receiptData.store.cnpj }).select("id").single();
         if (storeErr) throw storeErr;
         storeId = newStore.id;
       }
     } else {
       const { data: newStore, error: storeErr } = await supabaseAdmin
-        .from("stores")
-        .insert({ user_id: user.id, nome: receiptData.store.nome })
-        .select("id")
-        .single();
+        .from("stores").insert({ user_id: user.id, nome: receiptData.store.nome }).select("id").single();
       if (storeErr) throw storeErr;
       storeId = newStore.id;
     }
 
-    // 2. Create receipt
     const { data: receipt, error: receiptErr } = await supabaseAdmin
-      .from("receipts")
-      .insert({
-        user_id: user.id,
-        store_id: storeId,
-        data_compra: receiptData.data_compra,
-        valor_total: receiptData.valor_total,
-      })
-      .select("id")
-      .single();
+      .from("receipts").insert({ user_id: user.id, store_id: storeId, data_compra: receiptData.data_compra, valor_total: receiptData.valor_total })
+      .select("id").single();
     if (receiptErr) throw receiptErr;
 
-    // 3. Insert receipt items
     const itemsToInsert = receiptData.items.map((item) => ({
       receipt_id: receipt.id,
       nome_produto: item.nome_produto,
@@ -254,20 +360,17 @@ Regras OBRIGATÓRIAS:
       preco_total: item.preco_total,
     }));
 
-    const { error: itemsErr } = await supabaseAdmin
-      .from("receipt_items")
-      .insert(itemsToInsert);
+    const { error: itemsErr } = await supabaseAdmin.from("receipt_items").insert(itemsToInsert);
     if (itemsErr) throw itemsErr;
 
-    // Audit log
     await supabaseAdmin.from("audit_logs").insert({
       user_id: user.id,
       action: "receipt_upload",
-      details: { receipt_id: receipt.id, store_id: storeId, items_count: receiptData.items.length, valor_total: receiptData.valor_total },
+      details: { receipt_id: receipt.id, store_id: storeId, items_count: receiptData.items.length, valor_total: receiptData.valor_total, warnings },
       ip_address: req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || null,
     });
 
-    console.log("Receipt processed successfully", { user_id: user.id, receipt_id: receipt.id });
+    console.log("[OCR] Receipt saved successfully", { user_id: user.id, receipt_id: receipt.id, warnings_count: warnings.length });
 
     return new Response(
       JSON.stringify({
@@ -275,19 +378,18 @@ Regras OBRIGATÓRIAS:
         receipt_id: receipt.id,
         store_id: storeId,
         data: receiptData,
+        warnings,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {
-    console.error("process-receipt error:", e);
+    console.error("[OCR] process-receipt error:", e);
     const message = e instanceof Error ? e.message : "Unknown error";
-    // Sanitize error message - don't expose internal details
     const safeMessage = message.includes("Unauthorized") || message.includes("Missing authorization")
       ? message
       : "Erro ao processar nota fiscal. Tente novamente.";
     return new Response(JSON.stringify({ error: safeMessage }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
