@@ -45,9 +45,10 @@ const CRITICAL_CATS = ["bebidas", "padaria", "outros"];
 
 export function calculateFinancialScore(
   receipts: ReceiptRow[],
-  rendaMensal: number
+  rendaMensal: number,
+  fixedExpensesTotal = 0
 ): FinancialScore {
-  if (rendaMensal <= 0 || receipts.length === 0) {
+  if (rendaMensal <= 0 || (receipts.length === 0 && fixedExpensesTotal <= 0)) {
     return {
       score: 0,
       nivel: "critico",
@@ -82,9 +83,11 @@ export function calculateFinancialScore(
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const currentSpending = monthlyTotals[currentMonth] || 0;
   const projectedSpending = today > 0 ? (currentSpending / today) * daysInMonth : currentSpending;
-  const spendingToUse = last3.length > 0
+  // Include fixed expenses in spending calculation
+  const baseSpending = last3.length > 0
     ? last3.reduce((s, m) => s + (monthlyTotals[m] || 0), 0) / last3.length
     : projectedSpending;
+  const spendingToUse = baseSpending + fixedExpensesTotal;
 
   // ── 1) Gasto vs Renda (max 30) ──
   const gastoRatio = spendingToUse / rendaMensal;
