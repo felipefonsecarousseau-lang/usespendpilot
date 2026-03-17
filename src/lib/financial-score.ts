@@ -45,7 +45,8 @@ const CRITICAL_CATS = ["bebidas", "padaria", "outros"];
 
 export function calculateFinancialScore(
   receipts: ReceiptRow[],
-  rendaMensal: number
+  rendaMensal: number,
+  fixedExpensesTotal = 0
 ): FinancialScore {
   if (rendaMensal <= 0 || receipts.length === 0) {
     return {
