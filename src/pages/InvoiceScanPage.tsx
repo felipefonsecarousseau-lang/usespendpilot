@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import AppLayout from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ParsedItem {
   nome_produto: string;
@@ -19,6 +20,7 @@ interface ParsedItem {
 const CATEGORIAS = ["mercado", "higiene", "limpeza", "bebidas", "padaria", "hortifruti", "outros"];
 
 const InvoiceScanPage = () => {
+  const queryClient = useQueryClient();
   const [file, setFile] = useState<File | null>(null);
   const [processing, setProcessing] = useState(false);
   const [items, setItems] = useState<ParsedItem[]>([]);
@@ -103,6 +105,11 @@ const InvoiceScanPage = () => {
         setDataCompra(receipt.data_compra || "");
         setWarnings(data.warnings || []);
         setReceiptSaved(true);
+
+        // Invalidate expense-related queries so other pages reflect new data
+        queryClient.invalidateQueries({ queryKey: ["gastos-receipt-items"] });
+        queryClient.invalidateQueries({ queryKey: ["gastos-receipt-items-prev"] });
+        queryClient.invalidateQueries({ queryKey: ["dashboard-receipts"] });
 
         setItems(
           receipt.items.map((item: any) => ({

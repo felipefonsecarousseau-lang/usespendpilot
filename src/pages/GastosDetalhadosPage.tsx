@@ -91,6 +91,7 @@ const GastosDetalhadosPage = () => {
         .lte("receipts.data_compra", format(dateRange.to, "yyyy-MM-dd"));
       return data || [];
     },
+    refetchOnWindowFocus: true,
   });
 
   // ─── Fetch previous period receipt items ───
