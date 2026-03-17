@@ -1,6 +1,6 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, ScanLine, FileText, Users, LogOut, TrendingDown, ShoppingCart, Crown, CreditCard, PieChart, Plus, Zap, RotateCcw } from "lucide-react";
+import { LayoutDashboard, ScanLine, FileText, Users, LogOut, TrendingDown, ShoppingCart, Crown, CreditCard, PieChart, Plus, Zap, RotateCcw, Home } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import QuickAddExpenseModal from "@/components/QuickAddExpenseModal";
@@ -65,40 +65,25 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
         </button>
       </aside>
 
-      {/* Mobile nav */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface border-t border-border flex justify-around py-2">
-        {navItems.slice(0, 4).map((item) => {
-          const active = location.pathname === item.to;
-          return (
-            <Link
-              key={item.to}
-              to={item.to}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1 text-xs transition-colors ${
-                active ? "text-primary" : "text-muted-foreground"
-              }`}
-            >
-              <item.icon className="h-5 w-5" />
-              {item.label}
-            </Link>
-          );
-        })}
-        {/* Center FAB placeholder */}
-        <div className="w-12" />
-        {navItems.slice(4, 7).map((item) => {
-          const active = location.pathname === item.to;
-          return (
-            <Link
-              key={item.to}
-              to={item.to}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1 text-xs transition-colors ${
-                active ? "text-primary" : "text-muted-foreground"
-              }`}
-            >
-              <item.icon className="h-5 w-5" />
-              {item.label}
-            </Link>
-          );
-        })}
+      {/* Mobile nav — horizontally scrollable */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface border-t border-border">
+        <div className="flex overflow-x-auto scrollbar-hide py-2 px-1 gap-1">
+          {navItems.map((item) => {
+            const active = location.pathname === item.to;
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`flex flex-col items-center gap-0.5 min-w-[4rem] px-2 py-1 text-[10px] transition-colors shrink-0 ${
+                  active ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                <item.icon className="h-5 w-5" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
       {/* FAB — floating add button */}
@@ -146,6 +131,18 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
 
       {/* Main */}
       <main className="flex-1 p-6 pb-24 md:pb-6 overflow-auto">
+        {/* Mobile header with home button */}
+        {location.pathname !== "/dashboard" && (
+          <div className="md:hidden flex items-center gap-2 mb-4">
+            <Link
+              to="/dashboard"
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Home className="h-4 w-4" />
+              Início
+            </Link>
+          </div>
+        )}
         {children}
       </main>
     </div>

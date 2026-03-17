@@ -78,4 +78,12 @@
   .glass-card-inner {
     @apply bg-card/30 rounded-xl;
   }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
