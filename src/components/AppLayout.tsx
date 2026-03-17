@@ -65,40 +65,25 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
         </button>
       </aside>
 
-      {/* Mobile nav */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface border-t border-border flex justify-around py-2">
-        {navItems.slice(0, 4).map((item) => {
-          const active = location.pathname === item.to;
-          return (
-            <Link
-              key={item.to}
-              to={item.to}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1 text-xs transition-colors ${
-                active ? "text-primary" : "text-muted-foreground"
-              }`}
-            >
-              <item.icon className="h-5 w-5" />
-              {item.label}
-            </Link>
-          );
-        })}
-        {/* Center FAB placeholder */}
-        <div className="w-12" />
-        {navItems.slice(4, 7).map((item) => {
-          const active = location.pathname === item.to;
-          return (
-            <Link
-              key={item.to}
-              to={item.to}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1 text-xs transition-colors ${
-                active ? "text-primary" : "text-muted-foreground"
-              }`}
-            >
-              <item.icon className="h-5 w-5" />
-              {item.label}
-            </Link>
-          );
-        })}
+      {/* Mobile nav — horizontally scrollable */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface border-t border-border">
+        <div className="flex overflow-x-auto scrollbar-hide py-2 px-1 gap-1">
+          {navItems.map((item) => {
+            const active = location.pathname === item.to;
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`flex flex-col items-center gap-0.5 min-w-[4rem] px-2 py-1 text-[10px] transition-colors shrink-0 ${
+                  active ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                <item.icon className="h-5 w-5" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
       {/* FAB — floating add button */}
