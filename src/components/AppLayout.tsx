@@ -11,6 +11,7 @@ const navItems = [
 { to: "/family", label: "Família", icon: Users },
 { to: "/economia-supermercado", label: "Economia", icon: TrendingDown },
 { to: "/lista-inteligente", label: "Lista", icon: ShoppingCart },
+{ to: "/gastos-detalhados", label: "Gastos", icon: PieChart },
 { to: "/premium", label: "Premium", icon: Crown },
 { to: "/minha-assinatura", label: "Assinatura", icon: CreditCard }];
 
