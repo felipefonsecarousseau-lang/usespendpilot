@@ -145,10 +145,10 @@ export function generateForecast(
     ? 0
     : (today > 0 ? gastoAtualMes / today : 0);
   const previsaoGastoTotal = mesFallback
-    ? gastoAtualMes
-    : gastoAtualMes + mediaDiariaAtual * diasRestantes;
+    ? gastoAtualMes + fixedExpensesTotal
+    : gastoAtualMes + mediaDiariaAtual * diasRestantes + fixedExpensesTotal;
 
-  // ── 4) Balance forecast ──
+  // ── 4) Balance forecast (includes fixed expenses) ──
   const saldoPrevisto = rendaMensal - previsaoGastoTotal;
 
   // ── 5) Trend detection (>10% increase) ──
