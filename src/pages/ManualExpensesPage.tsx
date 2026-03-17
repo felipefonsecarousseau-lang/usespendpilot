@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Plus, Trash2, AlertTriangle, CalendarClock, Loader2 } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, CalendarClock, Loader2, CheckCircle2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import AppLayout from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useFixedExpenseOccurrences, type Occurrence } from "@/hooks/useFixedExpenseOccurrences";
 
 interface FixedExpense {
   id: string;
@@ -33,19 +34,11 @@ const getProximoVencimento = (dia: number): Date => {
   return venc;
 };
 
-const statusColors: Record<string, string> = {
-  pendente: "bg-accent/20 text-accent",
-  agendado: "bg-primary/20 text-primary",
-  pago: "bg-muted text-muted-foreground",
-};
-
-const statusLabels: Record<string, string> = {
-  pendente: "Pendente",
-  agendado: "Agendado",
-  pago: "Pago",
-};
-
 const ManualExpensesPage = () => {
+  const now = new Date();
+  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+  const monthName = now.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+
   const [showForm, setShowForm] = useState(false);
   const [nome, setNome] = useState("");
   const [valor, setValor] = useState("");
@@ -53,7 +46,8 @@ const ManualExpensesPage = () => {
   const [categoria, setCategoria] = useState(categorias[0]);
   const queryClient = useQueryClient();
 
-  const { data: expenses = [], isLoading } = useQuery({
+  // Fetch base fixed expenses (for adding new ones)
+  const { data: expenses = [], isLoading: loadingExpenses } = useQuery({
     queryKey: ["fixed-expenses"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -68,6 +62,10 @@ const ManualExpensesPage = () => {
       return data as FixedExpense[];
     },
   });
+
+  // Occurrences for the current month (auto-generated)
+  const { occurrences, isLoading: loadingOcc, markPaid, markPending, totals } =
+    useFixedExpenseOccurrences(currentMonthStart);
 
   const addMutation = useMutation({
     mutationFn: async (exp: { nome: string; valor: number; dia_vencimento: number; categoria: string }) => {
@@ -85,17 +83,11 @@ const ManualExpensesPage = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["fixed-expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["fixed-expense-occurrences"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-fixed-expenses"] });
       toast.success("Conta recorrente adicionada!");
     },
     onError: () => toast.error("Erro ao adicionar conta."),
-  });
-
-  const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase.from("fixed_expenses").update({ status }).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["fixed-expenses"] }),
   });
 
   const deleteMutation = useMutation({
@@ -105,31 +97,41 @@ const ManualExpensesPage = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["fixed-expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["fixed-expense-occurrences"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-fixed-expenses"] });
       toast.success("Conta removida.");
     },
     onError: () => toast.error("Erro ao remover conta."),
   });
 
+  // Alerts for upcoming due dates
   const alertas = useMemo(() => {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
-    return expenses
-      .filter((e) => {
-        if (e.status === "pago") return false;
-        const venc = getProximoVencimento(e.dia_vencimento);
+    return occurrences
+      .filter((o) => {
+        if (o.status === "paid") return false;
+        const venc = getProximoVencimento(o.dia_vencimento ?? 1);
         const diff = Math.ceil((venc.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
         return diff >= 0 && diff <= 3;
       })
-      .map((e) => {
-        const venc = getProximoVencimento(e.dia_vencimento);
+      .map((o) => {
+        const venc = getProximoVencimento(o.dia_vencimento ?? 1);
         const diff = Math.ceil((venc.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
-        return { ...e, diasRestantes: diff };
+        return { ...o, diasRestantes: diff };
       });
-  }, [expenses]);
+  }, [occurrences]);
 
-  const toggleStatus = (id: string, current: string) => {
-    const next = current === "pendente" ? "agendado" : current === "agendado" ? "pago" : "pendente";
-    updateStatusMutation.mutate({ id, status: next });
+  const pendingOccs = occurrences.filter((o) => o.status === "pending");
+  const paidOccs = occurrences.filter((o) => o.status === "paid");
+
+  const handleToggleStatus = (occ: Occurrence) => {
+    if (occ.status === "pending") {
+      markPaid.mutate(occ.id);
+      toast.success(`${occ.nome} marcado como pago!`);
+    } else {
+      markPending.mutate(occ.id);
+    }
   };
 
   const addExpense = () => {
@@ -159,13 +161,18 @@ const ManualExpensesPage = () => {
     );
   };
 
+  const formatSimple = (val: number) =>
+    `R$ ${val.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
+
+  const isLoading = loadingExpenses || loadingOcc;
+
   return (
     <AppLayout>
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Contas Recorrentes</h1>
-            <p className="text-sm text-muted-foreground mt-1">Gerencie suas contas fixas e recorrentes.</p>
+            <p className="text-sm text-muted-foreground mt-1 capitalize">{monthName}</p>
           </div>
           <Button onClick={() => setShowForm(!showForm)} size="sm">
             <Plus className="h-4 w-4 mr-1" />
@@ -173,6 +180,36 @@ const ManualExpensesPage = () => {
           </Button>
         </div>
 
+        {/* Summary card */}
+        {totals.total > 0 && (
+          <div className="glass-card p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Total contas fixas</p>
+                <p className="text-xl font-bold font-mono text-foreground">{formatSimple(totals.total)}</p>
+              </div>
+              <div className="flex gap-4 text-sm">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-muted-foreground">{formatSimple(totals.paid)}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5 text-accent" />
+                  <span className="text-muted-foreground">{formatSimple(totals.pending)}</span>
+                </div>
+              </div>
+            </div>
+            {/* Progress */}
+            <div className="w-full h-1.5 rounded-full bg-muted mt-3">
+              <div
+                className="h-full rounded-full bg-primary transition-all"
+                style={{ width: `${totals.total > 0 ? (totals.paid / totals.total) * 100 : 0}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Alerts */}
         {alertas.length > 0 && (
           <div className="space-y-2">
             {alertas.map((a) => (
@@ -188,6 +225,7 @@ const ManualExpensesPage = () => {
           </div>
         )}
 
+        {/* Add form */}
         {showForm && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
@@ -229,45 +267,101 @@ const ManualExpensesPage = () => {
           <div className="flex justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
-        ) : expenses.length === 0 ? (
+        ) : occurrences.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground text-sm">
-            Nenhuma conta cadastrada. Clique em "Novo" para começar.
+            Adicione contas fixas para prever seus gastos mensais.
           </div>
         ) : (
-          <div className="glass-card divide-y divide-border">
-            {expenses.map((expense, i) => (
-              <motion.div
-                key={expense.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="flex items-center justify-between p-4 gap-4 group"
-              >
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <button
-                    onClick={() => toggleStatus(expense.id, expense.status)}
-                    className={`text-xs px-2 py-0.5 rounded-full font-medium transition-colors ${statusColors[expense.status]}`}
-                  >
-                    {statusLabels[expense.status]}
-                  </button>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{expense.nome}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {expense.categoria} · Todo dia {expense.dia_vencimento}
-                    </p>
-                  </div>
+          <div className="space-y-4">
+            {/* Pending */}
+            {pendingOccs.length > 0 && (
+              <div>
+                <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5" /> Pendentes ({pendingOccs.length})
+                </h2>
+                <div className="glass-card divide-y divide-border">
+                  {pendingOccs.map((occ, i) => (
+                    <motion.div
+                      key={occ.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.03 }}
+                      className="flex items-center justify-between p-4 gap-4 group"
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <button
+                          onClick={() => handleToggleStatus(occ)}
+                          className="text-xs px-2 py-0.5 rounded-full font-medium bg-accent/20 text-accent hover:bg-primary/20 hover:text-primary transition-colors"
+                          title="Marcar como pago"
+                        >
+                          Pendente
+                        </button>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{occ.nome}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {occ.categoria} · Dia {occ.dia_vencimento}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-mono">{formatCurrency(Number(occ.valor))}</span>
+                        <button
+                          onClick={() => deleteMutation.mutate(occ.fixed_expense_id)}
+                          className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm">{formatCurrency(expense.valor)}</span>
-                  <button
-                    onClick={() => deleteMutation.mutate(expense.id)}
-                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+              </div>
+            )}
+
+            {/* Paid */}
+            {paidOccs.length > 0 && (
+              <div>
+                <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5" /> Pagas ({paidOccs.length})
+                </h2>
+                <div className="glass-card divide-y divide-border">
+                  {paidOccs.map((occ, i) => (
+                    <motion.div
+                      key={occ.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.03 }}
+                      className="flex items-center justify-between p-4 gap-4 group opacity-60"
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <button
+                          onClick={() => handleToggleStatus(occ)}
+                          className="text-xs px-2 py-0.5 rounded-full font-medium bg-primary/20 text-primary hover:bg-accent/20 hover:text-accent transition-colors"
+                          title="Desfazer pagamento"
+                        >
+                          Pago
+                        </button>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate line-through">{occ.nome}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {occ.categoria} · Dia {occ.dia_vencimento}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-mono">{formatCurrency(Number(occ.valor))}</span>
+                        <button
+                          onClick={() => deleteMutation.mutate(occ.fixed_expense_id)}
+                          className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
-              </motion.div>
-            ))}
+              </div>
+            )}
           </div>
         )}
       </div>

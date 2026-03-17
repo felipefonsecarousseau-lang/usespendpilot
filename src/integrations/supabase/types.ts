@@ -68,6 +68,47 @@ export type Database = {
         }
         Relationships: []
       }
+      fixed_expense_occurrences: {
+        Row: {
+          created_at: string
+          data_pagamento: string | null
+          fixed_expense_id: string
+          id: string
+          mes: string
+          status: Database["public"]["Enums"]["occurrence_status"]
+          user_id: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          data_pagamento?: string | null
+          fixed_expense_id: string
+          id?: string
+          mes: string
+          status?: Database["public"]["Enums"]["occurrence_status"]
+          user_id: string
+          valor?: number
+        }
+        Update: {
+          created_at?: string
+          data_pagamento?: string | null
+          fixed_expense_id?: string
+          id?: string
+          mes?: string
+          status?: Database["public"]["Enums"]["occurrence_status"]
+          user_id?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fixed_expense_occurrences_fixed_expense_id_fkey"
+            columns: ["fixed_expense_id"]
+            isOneToOne: false
+            referencedRelation: "fixed_expenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fixed_expenses: {
         Row: {
           ativo: boolean
@@ -312,6 +353,7 @@ export type Database = {
     }
     Enums: {
       billing_cycle: "monthly" | "yearly"
+      occurrence_status: "pending" | "paid"
       plan_status: "active" | "cancelled" | "expired"
       plan_type: "free" | "premium"
       product_category:
@@ -450,6 +492,7 @@ export const Constants = {
   public: {
     Enums: {
       billing_cycle: ["monthly", "yearly"],
+      occurrence_status: ["pending", "paid"],
       plan_status: ["active", "cancelled", "expired"],
       plan_type: ["free", "premium"],
       product_category: [

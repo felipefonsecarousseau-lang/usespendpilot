@@ -10,8 +10,10 @@ import { calculateFinancialScore, type ScoreLevel } from "@/lib/financial-score"
 import { generateRecommendations } from "@/lib/financial-advisor";
 import FinancialAdvisorCard from "@/components/FinancialAdvisorCard";
 import MonthlyBudgetCard from "@/components/MonthlyBudgetCard";
+import FixedExpensesDashboardCard from "@/components/FixedExpensesDashboardCard";
 import PremiumGate from "@/components/PremiumGate";
 import { usePremiumStatus } from "@/hooks/usePremiumStatus";
+import { useFixedExpenseOccurrences } from "@/hooks/useFixedExpenseOccurrences";
 
 const cardVariants = {
   initial: { opacity: 0, y: 20 },
@@ -85,6 +87,9 @@ const DashboardPage = () => {
   const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
   const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().split("T")[0];
 
+  // Fixed expense occurrences for current month
+  const { totals: fixedTotals } = useFixedExpenseOccurrences(currentMonthStart);
+
   // Fetch receipts with items for the current month only
   const { data: receipts = [] } = useQuery({
     queryKey: ["dashboard-receipts", currentMonthStart],
@@ -131,7 +136,7 @@ const DashboardPage = () => {
   );
 
   // Current month: compute real totals from receipt_items
-  const { totalGasto, spendingData, topCategory } = useMemo(() => {
+  const { totalGastoReceipts, spendingData, topCategory } = useMemo(() => {
     const catTotals: Record<string, number> = {};
     let total = 0;
 
@@ -156,9 +161,11 @@ const DashboardPage = () => {
 
     const top = data.length > 0 ? data[0] : null;
 
-    return { totalGasto: Math.round(total * 100) / 100, spendingData: data, topCategory: top };
+    return { totalGastoReceipts: Math.round(total * 100) / 100, spendingData: data, topCategory: top };
   }, [receipts]);
 
+  // Combined total: receipts + fixed expenses
+  const totalGasto = totalGastoReceipts + fixedTotals.total;
   const hasData = totalGasto > 0;
 
   const forecast = useMemo(
@@ -247,6 +254,9 @@ const DashboardPage = () => {
 
         {/* Monthly budget goal */}
         <MonthlyBudgetCard totalGasto={totalGasto} currentMonthStart={currentMonthStart} />
+
+        {/* Fixed expenses summary */}
+        <FixedExpensesDashboardCard total={fixedTotals.total} paid={fixedTotals.paid} pending={fixedTotals.pending} />
 
         {/* Forecast cards */}
         {hasData && rendaMensal > 0 && (
