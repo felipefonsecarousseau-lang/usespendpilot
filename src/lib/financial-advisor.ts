@@ -197,7 +197,7 @@ export function generateRecommendations(
 
   // ── 4) Sugestão de melhoria do score ──
   if (rendaMensal > 0) {
-    const score = calculateFinancialScore(receipts as any, rendaMensal);
+    const score = calculateFinancialScore(receipts as any, rendaMensal, fixedExpensesTotal);
     if (score.score < 80 && score.score > 0) {
       // Find weakest pillar
       const { detalhes } = score;
