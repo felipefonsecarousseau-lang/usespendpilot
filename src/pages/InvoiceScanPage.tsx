@@ -20,6 +20,7 @@ interface ParsedItem {
 const CATEGORIAS = ["mercado", "higiene", "limpeza", "bebidas", "padaria", "hortifruti", "outros"];
 
 const InvoiceScanPage = () => {
+  const queryClient = useQueryClient();
   const [file, setFile] = useState<File | null>(null);
   const [processing, setProcessing] = useState(false);
   const [items, setItems] = useState<ParsedItem[]>([]);
