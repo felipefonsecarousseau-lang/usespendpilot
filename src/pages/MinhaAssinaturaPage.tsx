@@ -171,9 +171,21 @@ const MinhaAssinaturaPage = () => {
           {plan?.isPremium && !plan.isTrial && (
             <div className="glass-card p-6 text-center space-y-4">
               <p className="text-sm text-muted-foreground">Gerencie sua assinatura, altere forma de pagamento ou cancele.</p>
-              <Button variant="outline" className="gap-2" onClick={handleManageSubscription} disabled={portalLoading}>
-                {portalLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Settings className="h-4 w-4" />}
-                Gerenciar assinatura
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Button variant="outline" className="gap-2" onClick={handleManageSubscription} disabled={portalLoading}>
+                  {portalLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Settings className="h-4 w-4" />}
+                  Gerenciar assinatura
+                </Button>
+                {subscription?.interval === "month" && (
+                  <Button
+                    className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+                    onClick={() => handleSubscribe("yearly")}
+                    disabled={!!checkoutLoading}
+                  >
+                    {checkoutLoading === "yearly" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUpCircle className="h-4 w-4" />}
+                    Mudar para anual — Economize R$88,90
+                  </Button>
+                )}
               </Button>
             </div>
           )}
