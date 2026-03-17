@@ -51,7 +51,8 @@ function monthKey(date: string) {
  */
 export function generateRecommendations(
   receipts: StoreReceiptRow[],
-  rendaMensal: number
+  rendaMensal: number,
+  fixedExpensesTotal = 0
 ): Recommendation[] {
   if (receipts.length === 0) return [];
 
