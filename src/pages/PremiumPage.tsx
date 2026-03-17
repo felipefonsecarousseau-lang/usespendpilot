@@ -155,7 +155,7 @@ const PremiumPage = () => {
                 {subscription?.interval === "month" && (
                   <Button
                     className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
-                    onClick={() => handleSubscribe()}
+                    onClick={() => handleSubscribe("yearly")}
                     disabled={loading}
                   >
                     {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUpCircle className="h-4 w-4" />}
