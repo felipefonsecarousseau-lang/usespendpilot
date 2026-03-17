@@ -136,7 +136,7 @@ const DashboardPage = () => {
   );
 
   // Current month: compute real totals from receipt_items
-  const { totalGasto, spendingData, topCategory } = useMemo(() => {
+  const { totalGastoReceipts, spendingData, topCategory } = useMemo(() => {
     const catTotals: Record<string, number> = {};
     let total = 0;
 
