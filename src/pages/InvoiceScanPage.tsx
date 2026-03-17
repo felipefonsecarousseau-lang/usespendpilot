@@ -227,8 +227,8 @@ const InvoiceScanPage = () => {
             {(warnings.length > 0 || hasPartialError) && (
               <div className="glass-card p-4 border-accent/30 bg-accent/5">
                 <div className="flex items-center gap-2 mb-2">
-                  <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                  <p className="text-sm font-medium text-yellow-600">
+                  <AlertTriangle className="h-4 w-4 text-accent" />
+                  <p className="text-sm font-medium text-accent-foreground">
                     {hasPartialError ? "Nota parcialmente interpretada" : "Ajustes aplicados"}
                   </p>
                 </div>
