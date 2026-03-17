@@ -9,6 +9,7 @@ import { generateForecast } from "@/lib/financial-forecast";
 import { calculateFinancialScore, type ScoreLevel } from "@/lib/financial-score";
 import { generateRecommendations } from "@/lib/financial-advisor";
 import FinancialAdvisorCard from "@/components/FinancialAdvisorCard";
+import MonthlyBudgetCard from "@/components/MonthlyBudgetCard";
 import PremiumGate from "@/components/PremiumGate";
 import { usePremiumStatus } from "@/hooks/usePremiumStatus";
 
@@ -243,6 +244,9 @@ const DashboardPage = () => {
             )}
           </motion.div>
         </div>
+
+        {/* Monthly budget goal */}
+        <MonthlyBudgetCard totalGasto={totalGasto} currentMonthStart={currentMonthStart} />
 
         {/* Forecast cards */}
         {hasData && rendaMensal > 0 && (
