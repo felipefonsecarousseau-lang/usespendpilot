@@ -237,6 +237,20 @@ const GastosDetalhadosPage = () => {
         subMap.set(exp.nome, (subMap.get(exp.nome) || 0) + Number(exp.valor));
       });
 
+    // Manual expenses matching category
+    manualExpenses
+      .filter((me: any) => (me.categoria || "outros").toLowerCase() === selectedCategory)
+      .forEach((me: any) => {
+        items.push({
+          nome: me.nome || "Gasto manual",
+          valor: Number(me.valor),
+          data: me.data,
+          estabelecimento: me.tipo_pagamento ? `Manual (${me.tipo_pagamento})` : "Manual",
+        });
+        const key = me.nome || "Gasto manual";
+        subMap.set(key, (subMap.get(key) || 0) + Number(me.valor));
+      });
+
     const subChart = Array.from(subMap.entries())
       .map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }))
       .sort((a, b) => b.value - a.value)
@@ -245,9 +259,9 @@ const GastosDetalhadosPage = () => {
     items.sort((a, b) => b.valor - a.valor);
 
     return { items, subChart };
-  }, [selectedCategory, receiptItems, fixedExpenses]);
+  }, [selectedCategory, receiptItems, fixedExpenses, manualExpenses]);
 
-  const isLoading = loadingReceipts || loadingFixed;
+  const isLoading = loadingReceipts || loadingFixed || loadingManual;
   const isEmpty = categoryData.length === 0 && !isLoading;
 
   const getColor = (name: string, i: number) =>
