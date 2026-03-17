@@ -56,7 +56,7 @@ const pct = (v: number, total: number) => total > 0 ? ((v / total) * 100).toFixe
 
 // ─── Main page ───
 const GastosDetalhadosPage = () => {
-  const [period, setPeriod] = useState<PeriodPreset>("30");
+  const [period, setPeriod] = useState<PeriodPreset>("all");
   const [customFrom, setCustomFrom] = useState<Date | undefined>(subMonths(new Date(), 1));
   const [customTo, setCustomTo] = useState<Date | undefined>(new Date());
   const [expenseType, setExpenseType] = useState<ExpenseType>("all");
