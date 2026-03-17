@@ -255,6 +255,9 @@ const DashboardPage = () => {
         {/* Monthly budget goal */}
         <MonthlyBudgetCard totalGasto={totalGasto} currentMonthStart={currentMonthStart} />
 
+        {/* Fixed expenses summary */}
+        <FixedExpensesDashboardCard total={fixedTotals.total} paid={fixedTotals.paid} pending={fixedTotals.pending} />
+
         {/* Forecast cards */}
         {hasData && rendaMensal > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
