@@ -46,11 +46,13 @@ function fmt(val: number) {
  * Generate financial forecasts from receipt history.
  * @param receipts - Array of receipt rows with nested items
  * @param rendaMensal - Monthly household income
+ * @param fixedExpensesTotal - Total fixed expenses for the current month (from fixed_expense_occurrences)
  * @param monthsBack - How many months of history to consider (default 6)
  */
 export function generateForecast(
   receipts: ReceiptRow[],
   rendaMensal: number,
+  fixedExpensesTotal = 0,
   monthsBack = 6
 ): FinancialForecast {
   const now = new Date();
