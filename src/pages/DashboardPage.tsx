@@ -161,9 +161,11 @@ const DashboardPage = () => {
 
     const top = data.length > 0 ? data[0] : null;
 
-    return { totalGasto: Math.round(total * 100) / 100, spendingData: data, topCategory: top };
+    return { totalGastoReceipts: Math.round(total * 100) / 100, spendingData: data, topCategory: top };
   }, [receipts]);
 
+  // Combined total: receipts + fixed expenses
+  const totalGasto = totalGastoReceipts + fixedTotals.total;
   const hasData = totalGasto > 0;
 
   const forecast = useMemo(
