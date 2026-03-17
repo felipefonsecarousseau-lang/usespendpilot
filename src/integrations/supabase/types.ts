@@ -68,6 +68,42 @@ export type Database = {
         }
         Relationships: []
       }
+      fixed_expenses: {
+        Row: {
+          ativo: boolean
+          categoria: string
+          created_at: string
+          dia_vencimento: number
+          id: string
+          nome: string
+          status: string
+          user_id: string
+          valor: number
+        }
+        Insert: {
+          ativo?: boolean
+          categoria?: string
+          created_at?: string
+          dia_vencimento?: number
+          id?: string
+          nome: string
+          status?: string
+          user_id: string
+          valor?: number
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string
+          created_at?: string
+          dia_vencimento?: number
+          id?: string
+          nome?: string
+          status?: string
+          user_id?: string
+          valor?: number
+        }
+        Relationships: []
+      }
       goals: {
         Row: {
           created_at: string
