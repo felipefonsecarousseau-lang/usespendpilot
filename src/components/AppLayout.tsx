@@ -131,6 +131,18 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
 
       {/* Main */}
       <main className="flex-1 p-6 pb-24 md:pb-6 overflow-auto">
+        {/* Mobile header with home button */}
+        {location.pathname !== "/dashboard" && (
+          <div className="md:hidden flex items-center gap-2 mb-4">
+            <Link
+              to="/dashboard"
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Home className="h-4 w-4" />
+              Início
+            </Link>
+          </div>
+        )}
         {children}
       </main>
     </div>
