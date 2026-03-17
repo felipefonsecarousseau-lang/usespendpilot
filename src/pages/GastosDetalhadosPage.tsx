@@ -345,6 +345,7 @@ const GastosDetalhadosPage = () => {
               <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="variavel">Variáveis</SelectItem>
               <SelectItem value="fixo">Fixos</SelectItem>
+              <SelectItem value="manual">Manuais</SelectItem>
             </SelectContent>
           </Select>
 
