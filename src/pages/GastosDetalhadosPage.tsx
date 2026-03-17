@@ -40,13 +40,14 @@ const FALLBACK_COLORS = [
   "hsl(100, 60%, 45%)", "hsl(45, 85%, 55%)", "hsl(215, 16%, 56%)",
 ];
 
-type PeriodPreset = "7" | "30" | "90" | "custom";
+type PeriodPreset = "7" | "30" | "90" | "all" | "custom";
 type ExpenseType = "all" | "fixo" | "variavel";
 
 const periodLabels: Record<string, string> = {
   "7": "Últimos 7 dias",
   "30": "Últimos 30 dias",
   "90": "Últimos 3 meses",
+  all: "Todo o período",
   custom: "Personalizado",
 };
 
@@ -55,7 +56,7 @@ const pct = (v: number, total: number) => total > 0 ? ((v / total) * 100).toFixe
 
 // ─── Main page ───
 const GastosDetalhadosPage = () => {
-  const [period, setPeriod] = useState<PeriodPreset>("30");
+  const [period, setPeriod] = useState<PeriodPreset>("all");
   const [customFrom, setCustomFrom] = useState<Date | undefined>(subMonths(new Date(), 1));
   const [customTo, setCustomTo] = useState<Date | undefined>(new Date());
   const [expenseType, setExpenseType] = useState<ExpenseType>("all");
@@ -65,6 +66,9 @@ const GastosDetalhadosPage = () => {
 
   const dateRange = useMemo(() => {
     const now = new Date();
+    if (period === "all") {
+      return { from: new Date("2000-01-01"), to: now };
+    }
     if (period === "custom" && customFrom && customTo) {
       return { from: customFrom, to: customTo };
     }
