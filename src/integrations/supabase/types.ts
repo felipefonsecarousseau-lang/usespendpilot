@@ -131,6 +131,30 @@ export type Database = {
         }
         Relationships: []
       }
+      monthly_budget: {
+        Row: {
+          created_at: string
+          id: string
+          mes: string
+          user_id: string
+          valor_limite: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mes: string
+          user_id: string
+          valor_limite?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mes?: string
+          user_id?: string
+          valor_limite?: number
+        }
+        Relationships: []
+      }
       receipt_items: {
         Row: {
           categoria: Database["public"]["Enums"]["product_category"]
