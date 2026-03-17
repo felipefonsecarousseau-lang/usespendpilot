@@ -46,11 +46,11 @@ const PremiumPage = () => {
   const period = cycle === "monthly" ? "mês" : "ano";
   const savings = cycle === "yearly" ? "Economize R$88,90/ano" : null;
 
-  const handleSubscribe = async () => {
+  const handleSubscribe = async (overrideCycle?: Cycle) => {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { cycle },
+        body: { cycle: overrideCycle ?? cycle },
       });
       if (error) throw error;
       if (data?.url) {
