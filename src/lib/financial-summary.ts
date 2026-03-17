@@ -3,6 +3,7 @@
 export interface MonthlyFinancialSummary {
   total_gastos_variaveis: number;
   total_contas_fixas: number;
+  total_gastos_manuais: number;
   total_gastos: number;
   total_pago: number;
   total_pendente: number;
@@ -17,13 +18,18 @@ interface OccurrenceLike {
   status: "pending" | "paid" | string;
 }
 
+interface ManualExpenseLike {
+  valor: number;
+}
+
 /**
- * Computes a unified monthly financial summary from receipt items and fixed expense occurrences.
+ * Computes a unified monthly financial summary from receipt items, fixed expense occurrences, and manual expenses.
  * This is the SINGLE SOURCE OF TRUTH for all financial calculations.
  */
 export function getMonthlyFinancialSummary(
   receiptItems: ReceiptItemLike[],
-  fixedOccurrences: OccurrenceLike[]
+  fixedOccurrences: OccurrenceLike[],
+  manualExpenses: ManualExpenseLike[] = []
 ): MonthlyFinancialSummary {
   const total_gastos_variaveis = receiptItems.reduce(
     (sum, item) => {
@@ -48,10 +54,19 @@ export function getMonthlyFinancialSummary(
     }
   }
 
+  const total_gastos_manuais = manualExpenses.reduce(
+    (sum, item) => {
+      const v = Number(item.valor) || 0;
+      return sum + (v > 0 ? v : 0);
+    },
+    0
+  );
+
   return {
     total_gastos_variaveis: Math.round(total_gastos_variaveis * 100) / 100,
     total_contas_fixas: Math.round(total_contas_fixas * 100) / 100,
-    total_gastos: Math.round((total_gastos_variaveis + total_contas_fixas) * 100) / 100,
+    total_gastos_manuais: Math.round(total_gastos_manuais * 100) / 100,
+    total_gastos: Math.round((total_gastos_variaveis + total_contas_fixas + total_gastos_manuais) * 100) / 100,
     total_pago: Math.round(total_pago * 100) / 100,
     total_pendente: Math.round(total_pendente * 100) / 100,
   };
