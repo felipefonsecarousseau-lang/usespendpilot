@@ -45,8 +45,7 @@ const CRITICAL_CATS = ["bebidas", "padaria", "outros"];
 
 export function calculateFinancialScore(
   receipts: ReceiptRow[],
-  rendaMensal: number,
-  fixedExpensesTotal = 0
+  rendaMensal: number
 ): FinancialScore {
   if (rendaMensal <= 0 || receipts.length === 0) {
     return {
@@ -81,7 +80,7 @@ export function calculateFinancialScore(
   // Current month spending (projected to full month)
   const today = now.getDate();
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const currentSpending = (monthlyTotals[currentMonth] || 0) + fixedExpensesTotal;
+  const currentSpending = monthlyTotals[currentMonth] || 0;
   const projectedSpending = today > 0 ? (currentSpending / today) * daysInMonth : currentSpending;
   const spendingToUse = last3.length > 0
     ? last3.reduce((s, m) => s + (monthlyTotals[m] || 0), 0) / last3.length
