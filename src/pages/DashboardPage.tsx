@@ -122,6 +122,9 @@ const DashboardPage = () => {
       return data ?? [];
     },
   });
+
+  // Fetch all receipts for forecast/score (premium features)
+  const { data: allReceipts = [] } = useQuery({
     queryKey: ["dashboard-all-receipts"],
     queryFn: async () => {
       const { data, error } = await supabase
