@@ -172,6 +172,39 @@ export type Database = {
         }
         Relationships: []
       }
+      manual_expenses: {
+        Row: {
+          categoria: string
+          created_at: string
+          data: string
+          id: string
+          nome: string
+          tipo_pagamento: string | null
+          user_id: string
+          valor: number
+        }
+        Insert: {
+          categoria?: string
+          created_at?: string
+          data?: string
+          id?: string
+          nome?: string
+          tipo_pagamento?: string | null
+          user_id: string
+          valor?: number
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          data?: string
+          id?: string
+          nome?: string
+          tipo_pagamento?: string | null
+          user_id?: string
+          valor?: number
+        }
+        Relationships: []
+      }
       monthly_budget: {
         Row: {
           created_at: string
