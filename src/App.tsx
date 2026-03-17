@@ -17,6 +17,7 @@ import ListaInteligentePage from "./pages/ListaInteligentePage";
 import PremiumPage from "./pages/PremiumPage";
 import MinhaAssinaturaPage from "./pages/MinhaAssinaturaPage";
 import GastosDetalhadosPage from "./pages/GastosDetalhadosPage";
+import OnboardingPage from "./pages/OnboardingPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={session ? <Navigate to="/dashboard" /> : <AuthPage />} />
+      <Route path="/onboarding" element={session ? <OnboardingPage /> : <Navigate to="/" />} />
       <Route path="/dashboard" element={session ? <DashboardPage /> : <Navigate to="/" />} />
       <Route path="/scan" element={session ? <InvoiceScanPage /> : <Navigate to="/" />} />
       <Route path="/expenses" element={session ? <ManualExpensesPage /> : <Navigate to="/" />} />

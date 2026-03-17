@@ -1,8 +1,10 @@
 import { useMemo } from "react";
+import { Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { TrendingUp, AlertTriangle, Calendar, Wallet, Target, TrendingDown, Activity } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useOnboarding } from "@/hooks/useOnboarding";
 import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "@/components/AppLayout";
 import { generateForecast } from "@/lib/financial-forecast";
@@ -83,6 +85,8 @@ const SCORE_LABELS: Record<ScoreLevel, string> = {
 };
 
 const DashboardPage = () => {
+  const { needsOnboarding, isLoading: onboardingLoading } = useOnboarding();
+
   const now = new Date();
   const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
   const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().split("T")[0];
@@ -223,6 +227,9 @@ const DashboardPage = () => {
   }, [forecast]);
 
   const monthName = now.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+
+  if (onboardingLoading) return null;
+  if (needsOnboarding) return <Navigate to="/onboarding" replace />;
 
   return (
     <AppLayout>
