@@ -41,7 +41,7 @@ const FALLBACK_COLORS = [
 ];
 
 type PeriodPreset = "7" | "30" | "90" | "all" | "custom";
-type ExpenseType = "all" | "fixo" | "variavel";
+type ExpenseType = "all" | "fixo" | "variavel" | "manual";
 
 const periodLabels: Record<string, string> = {
   "7": "Últimos 7 dias",
