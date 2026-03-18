@@ -1,12 +1,15 @@
 import { useState } from "react";
+import { useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { ArrowLeft } from "lucide-react";
 
 const AuthPage = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const [searchParams] = useSearchParams();
+  const [isLogin, setIsLogin] = useState(searchParams.get("mode") !== "signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -41,13 +44,19 @@ const AuthPage = () => {
         
         <div className="glass-card p-8">
           <div className="mb-8 text-center">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">SpendPilot
-
-            </h1>
+           <h1 className="text-3xl font-bold tracking-tight text-foreground">SpendPilot</h1>
             <p className="mt-2 text-sm text-muted-foreground">
               Seu fluxo de caixa, sob controle.
             </p>
           </div>
+
+          <Link
+            to="/"
+            className="mb-6 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Voltar para a página inicial
+          </Link>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

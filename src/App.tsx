@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
+import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
 import InvoiceScanPage from "./pages/InvoiceScanPage";
@@ -50,7 +51,8 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/" element={session ? <Navigate to="/dashboard" /> : <AuthPage />} />
+      <Route path="/" element={session ? <Navigate to="/dashboard" /> : <LandingPage />} />
+      <Route path="/auth" element={session ? <Navigate to="/dashboard" /> : <AuthPage />} />
       <Route path="/onboarding" element={session ? <OnboardingPage /> : <Navigate to="/" />} />
       <Route path="/dashboard" element={session ? <DashboardPage /> : <Navigate to="/" />} />
       <Route path="/scan" element={session ? <InvoiceScanPage /> : <Navigate to="/" />} />
