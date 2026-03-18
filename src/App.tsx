@@ -19,6 +19,7 @@ import MinhaAssinaturaPage from "./pages/MinhaAssinaturaPage";
 import GastosDetalhadosPage from "./pages/GastosDetalhadosPage";
 import VisaoFinanceiraPage from "./pages/VisaoFinanceiraPage";
 import OnboardingPage from "./pages/OnboardingPage";
+import FaqPage from "./pages/FaqPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -62,6 +63,7 @@ function AppRoutes() {
       <Route path="/minha-assinatura" element={session ? <MinhaAssinaturaPage /> : <Navigate to="/" />} />
       <Route path="/gastos-detalhados" element={session ? <GastosDetalhadosPage /> : <Navigate to="/" />} />
       <Route path="/visao-financeira" element={session ? <VisaoFinanceiraPage /> : <Navigate to="/" />} />
+      <Route path="/faq" element={session ? <FaqPage /> : <Navigate to="/" />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
