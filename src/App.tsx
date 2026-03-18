@@ -19,6 +19,7 @@ import MinhaAssinaturaPage from "./pages/MinhaAssinaturaPage";
 import GastosDetalhadosPage from "./pages/GastosDetalhadosPage";
 import VisaoFinanceiraPage from "./pages/VisaoFinanceiraPage";
 import OnboardingPage from "./pages/OnboardingPage";
+import FaqPage from "./pages/FaqPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
