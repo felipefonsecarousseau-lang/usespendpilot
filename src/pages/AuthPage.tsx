@@ -44,13 +44,19 @@ const AuthPage = () => {
         
         <div className="glass-card p-8">
           <div className="mb-8 text-center">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">SpendPilot
-
-            </h1>
+           <h1 className="text-3xl font-bold tracking-tight text-foreground">SpendPilot</h1>
             <p className="mt-2 text-sm text-muted-foreground">
               Seu fluxo de caixa, sob controle.
             </p>
           </div>
+
+          <Link
+            to="/"
+            className="mb-6 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Voltar para a página inicial
+          </Link>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
