@@ -16,6 +16,7 @@ const navItems = [
   { to: "/visao-financeira", label: "Visão", icon: BarChart3 },
   { to: "/premium", label: "Premium", icon: Crown },
   { to: "/minha-assinatura", label: "Assinatura", icon: CreditCard },
+  { to: "/faq", label: "FAQ", icon: HelpCircle },
 ];
 
 const AppLayout = ({ children }: { children: ReactNode }) => {
