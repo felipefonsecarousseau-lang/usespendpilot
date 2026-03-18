@@ -1,6 +1,6 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, ScanLine, FileText, Users, LogOut, TrendingDown, ShoppingCart, Crown, CreditCard, PieChart, Plus, Zap, RotateCcw, Home } from "lucide-react";
+import { LayoutDashboard, ScanLine, FileText, Users, LogOut, TrendingDown, ShoppingCart, Crown, CreditCard, PieChart, Plus, Zap, RotateCcw, Home, BarChart3 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import QuickAddExpenseModal from "@/components/QuickAddExpenseModal";
@@ -13,6 +13,7 @@ const navItems = [
   { to: "/economia-supermercado", label: "Economia", icon: TrendingDown },
   { to: "/lista-inteligente", label: "Lista", icon: ShoppingCart },
   { to: "/gastos-detalhados", label: "Gastos", icon: PieChart },
+  { to: "/visao-financeira", label: "Visão", icon: BarChart3 },
   { to: "/premium", label: "Premium", icon: Crown },
   { to: "/minha-assinatura", label: "Assinatura", icon: CreditCard },
 ];

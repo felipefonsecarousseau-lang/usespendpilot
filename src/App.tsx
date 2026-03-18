@@ -17,6 +17,7 @@ import ListaInteligentePage from "./pages/ListaInteligentePage";
 import PremiumPage from "./pages/PremiumPage";
 import MinhaAssinaturaPage from "./pages/MinhaAssinaturaPage";
 import GastosDetalhadosPage from "./pages/GastosDetalhadosPage";
+import VisaoFinanceiraPage from "./pages/VisaoFinanceiraPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import NotFound from "./pages/NotFound";
 
@@ -60,6 +61,7 @@ function AppRoutes() {
       <Route path="/premium" element={session ? <PremiumPage /> : <Navigate to="/" />} />
       <Route path="/minha-assinatura" element={session ? <MinhaAssinaturaPage /> : <Navigate to="/" />} />
       <Route path="/gastos-detalhados" element={session ? <GastosDetalhadosPage /> : <Navigate to="/" />} />
+      <Route path="/visao-financeira" element={session ? <VisaoFinanceiraPage /> : <Navigate to="/" />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
