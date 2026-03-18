@@ -1,6 +1,6 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Upload, Check, Loader2, AlertTriangle, Trash2, Pencil } from "lucide-react";
+import { Upload, Check, Loader2, AlertTriangle, Trash2, Pencil, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -17,14 +17,21 @@ interface ParsedItem {
   categoria: string;
 }
 
+interface ReceiptStoreData {
+  nome: string;
+  cnpj: string | null;
+}
+
 const CATEGORIAS = ["mercado", "higiene", "limpeza", "bebidas", "padaria", "hortifruti", "outros"];
 
 const InvoiceScanPage = () => {
   const queryClient = useQueryClient();
   const [file, setFile] = useState<File | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [items, setItems] = useState<ParsedItem[]>([]);
   const [storeName, setStoreName] = useState("");
+  const [storeData, setStoreData] = useState<ReceiptStoreData | null>(null);
   const [dataCompra, setDataCompra] = useState("");
   const [warnings, setWarnings] = useState<string[]>([]);
   const [hasPartialError, setHasPartialError] = useState(false);
@@ -38,6 +45,7 @@ const InvoiceScanPage = () => {
     setItems([]);
     setFile(null);
     setStoreName("");
+    setStoreData(null);
     setDataCompra("");
     setWarnings([]);
     setHasPartialError(false);
@@ -83,11 +91,10 @@ const InvoiceScanPage = () => {
       const base64 = await fileToBase64(f);
 
       const { data, error } = await supabase.functions.invoke("process-receipt", {
-        body: { image_base64: base64 },
+        body: { mode: "parse", image_base64: base64 },
       });
 
       if (error) {
-        // Check for specific HTTP errors
         const errorMsg = data?.error || error.message || "Erro ao processar nota fiscal.";
         if (data?.partial) {
           setHasPartialError(true);
@@ -102,15 +109,9 @@ const InvoiceScanPage = () => {
       if (data?.success && data.data) {
         const receipt = data.data;
         setStoreName(receipt.store?.nome || "");
+        setStoreData(receipt.store || null);
         setDataCompra(receipt.data_compra || "");
         setWarnings(data.warnings || []);
-        setReceiptSaved(true);
-
-        // Invalidate expense-related queries so other pages reflect new data
-        queryClient.invalidateQueries({ queryKey: ["gastos-receipt-items"] });
-        queryClient.invalidateQueries({ queryKey: ["gastos-receipt-items-prev"] });
-        queryClient.invalidateQueries({ queryKey: ["dashboard-receipts"] });
-        queryClient.invalidateQueries({ queryKey: ["dashboard-all-receipts"] });
 
         setItems(
           receipt.items.map((item: any) => ({
@@ -124,9 +125,9 @@ const InvoiceScanPage = () => {
         );
 
         if (data.warnings?.length > 0) {
-          toast.warning(`Nota processada com ${data.warnings.length} ajuste(s). Revise os itens.`);
+          toast.warning(`Nota processada com ${data.warnings.length} ajuste(s). Revise os itens antes de salvar.`);
         } else {
-          toast.success("Nota fiscal processada e salva com sucesso!");
+          toast.success("Nota lida com sucesso! Revise os itens e salve quando estiver pronto.");
         }
       }
     } catch (err) {
@@ -138,11 +139,54 @@ const InvoiceScanPage = () => {
     }
   };
 
+  const handleSave = async () => {
+    if (items.length === 0) return;
+
+    setSaving(true);
+    try {
+      const receiptData = {
+        store: storeData || { nome: storeName, cnpj: null },
+        data_compra: dataCompra || new Date().toISOString().split("T")[0],
+        valor_total: items.reduce((s, i) => s + i.valor, 0),
+        items: items.map((item) => ({
+          nome_produto: item.nome_produto,
+          nome_normalizado: item.nome_normalizado,
+          categoria: item.categoria,
+          quantidade: item.quantidade,
+          preco_unitario: item.preco_unitario,
+          preco_total: item.valor,
+        })),
+      };
+
+      const { data, error } = await supabase.functions.invoke("process-receipt", {
+        body: { mode: "save", receipt_data: receiptData },
+      });
+
+      if (error || !data?.success) {
+        toast.error(data?.error || "Erro ao salvar nota fiscal.");
+        return;
+      }
+
+      setReceiptSaved(true);
+      toast.success("Nota fiscal salva com sucesso!");
+
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ["gastos-receipt-items"] });
+      queryClient.invalidateQueries({ queryKey: ["gastos-receipt-items-prev"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-receipts"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-all-receipts"] });
+    } catch (err) {
+      console.error("Save error:", err);
+      toast.error("Erro ao salvar nota fiscal. Tente novamente.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const updateItem = (index: number, field: keyof ParsedItem, value: any) => {
     setItems((prev) => {
       const updated = [...prev];
       updated[index] = { ...updated[index], [field]: value };
-      // Recalc total when qty or unit price changes
       if (field === "quantidade" || field === "preco_unitario") {
         const qty = field === "quantidade" ? Number(value) : updated[index].quantidade;
         const unit = field === "preco_unitario" ? Number(value) : updated[index].preco_unitario;
@@ -154,15 +198,6 @@ const InvoiceScanPage = () => {
 
   const removeItem = (index: number) => {
     setItems((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleConfirm = () => {
-    if (receiptSaved) {
-      toast.success("Nota fiscal já foi salva!");
-    } else {
-      toast.success(`${items.length} itens processados!`);
-    }
-    resetState();
   };
 
   const formatCurrency = (val: number) => {
@@ -222,6 +257,25 @@ const InvoiceScanPage = () => {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-4"
           >
+            {/* Status badge */}
+            {!receiptSaved && (
+              <div className="glass-card p-3 border-primary/20 bg-primary/5 flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                <p className="text-xs text-muted-foreground">
+                  Nota <span className="font-medium text-foreground">não salva</span> — revise os itens e clique em salvar quando estiver pronto.
+                </p>
+              </div>
+            )}
+
+            {receiptSaved && (
+              <div className="glass-card p-3 border-green-500/20 bg-green-500/5 flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-500" />
+                <p className="text-xs text-muted-foreground">
+                  Nota <span className="font-medium text-green-600">salva com sucesso</span>.
+                </p>
+              </div>
+            )}
+
             {/* Store info */}
             {storeName && (
               <div className="glass-card p-4">
@@ -319,12 +373,16 @@ const InvoiceScanPage = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-mono">{formatCurrency(item.valor)}</span>
-                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setEditingIndex(i)}>
-                          <Pencil className="h-3 w-3 text-muted-foreground" />
-                        </Button>
-                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => removeItem(i)}>
-                          <Trash2 className="h-3 w-3 text-destructive" />
-                        </Button>
+                        {!receiptSaved && (
+                          <>
+                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setEditingIndex(i)}>
+                              <Pencil className="h-3 w-3 text-muted-foreground" />
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => removeItem(i)}>
+                              <Trash2 className="h-3 w-3 text-destructive" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </div>
                   )}
@@ -343,10 +401,21 @@ const InvoiceScanPage = () => {
               <Button variant="outline" className="flex-1" onClick={resetState}>
                 {receiptSaved ? "Nova nota" : "Descartar"}
               </Button>
-              <Button className="flex-1" onClick={handleConfirm}>
-                <Check className="h-4 w-4 mr-2" />
-                {receiptSaved ? "Concluído" : "Confirmar"}
-              </Button>
+              {!receiptSaved ? (
+                <Button className="flex-1" onClick={handleSave} disabled={saving}>
+                  {saving ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4 mr-2" />
+                  )}
+                  {saving ? "Salvando..." : "Salvar nota"}
+                </Button>
+              ) : (
+                <Button className="flex-1" onClick={resetState}>
+                  <Check className="h-4 w-4 mr-2" />
+                  Concluído
+                </Button>
+              )}
             </div>
           </motion.div>
         )}

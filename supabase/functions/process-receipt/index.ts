@@ -43,7 +43,7 @@ function validateAndCleanReceipt(raw: any): { data: ReceiptData; warnings: strin
   }
 
   // Clean and validate items
-  const seen = new Map<string, number>(); // key -> index for dedup
+  const seen = new Map<string, number>();
   const cleanItems: ReceiptItem[] = [];
 
   for (const item of raw.items) {
@@ -58,11 +58,9 @@ function validateAndCleanReceipt(raw: any): { data: ReceiptData; warnings: strin
     let preco_unitario = Math.abs(Number(item.preco_unitario) || 0);
     let preco_total = Math.abs(Number(item.preco_total) || 0);
 
-    // Fix price inconsistencies
     if (preco_total > 0 && preco_unitario > 0) {
       const expected = Math.round(quantidade * preco_unitario * 100) / 100;
       if (Math.abs(expected - preco_total) > 0.02) {
-        // Trust preco_total and recalculate unitario
         warnings.push(`Preço inconsistente para "${nome_normalizado}": ${quantidade}×${preco_unitario}≠${preco_total}, recalculando`);
         preco_unitario = Math.round((preco_total / quantidade) * 100) / 100;
       }
@@ -77,7 +75,6 @@ function validateAndCleanReceipt(raw: any): { data: ReceiptData; warnings: strin
       continue;
     }
 
-    // Validate category
     let categoria: ProductCategory = "outros";
     if (VALID_CATEGORIES.includes(item.categoria as ProductCategory)) {
       categoria = item.categoria as ProductCategory;
@@ -85,7 +82,6 @@ function validateAndCleanReceipt(raw: any): { data: ReceiptData; warnings: strin
       warnings.push(`Categoria inválida "${item.categoria}" para "${nome_normalizado}", usando "outros"`);
     }
 
-    // Dedup by normalized name
     const dedupKey = nome_normalizado.toLowerCase();
     if (seen.has(dedupKey)) {
       const existingIdx = seen.get(dedupKey)!;
@@ -103,7 +99,6 @@ function validateAndCleanReceipt(raw: any): { data: ReceiptData; warnings: strin
 
   if (cleanItems.length === 0) throw new Error("Nenhum item válido após limpeza");
 
-  // Recalculate total if it doesn't match
   const computedTotal = Math.round(cleanItems.reduce((s, i) => s + i.preco_total, 0) * 100) / 100;
   let valorTotal = Math.abs(Number(raw.valor_total) || 0);
   if (valorTotal === 0 || Math.abs(valorTotal - computedTotal) > 1) {
@@ -122,6 +117,56 @@ function validateAndCleanReceipt(raw: any): { data: ReceiptData; warnings: strin
   };
 }
 
+// --- Save receipt to database ---
+async function saveReceipt(supabaseAdmin: any, userId: string, receiptData: ReceiptData, req: Request) {
+  let storeId: string;
+  if (receiptData.store.cnpj) {
+    const { data: existingStore } = await supabaseAdmin
+      .from("stores").select("id").eq("user_id", userId).eq("cnpj", receiptData.store.cnpj).maybeSingle();
+    if (existingStore) {
+      storeId = existingStore.id;
+      await supabaseAdmin.from("stores").update({ nome: receiptData.store.nome }).eq("id", storeId);
+    } else {
+      const { data: newStore, error: storeErr } = await supabaseAdmin
+        .from("stores").insert({ user_id: userId, nome: receiptData.store.nome, cnpj: receiptData.store.cnpj }).select("id").single();
+      if (storeErr) throw storeErr;
+      storeId = newStore.id;
+    }
+  } else {
+    const { data: newStore, error: storeErr } = await supabaseAdmin
+      .from("stores").insert({ user_id: userId, nome: receiptData.store.nome }).select("id").single();
+    if (storeErr) throw storeErr;
+    storeId = newStore.id;
+  }
+
+  const { data: receipt, error: receiptErr } = await supabaseAdmin
+    .from("receipts").insert({ user_id: userId, store_id: storeId, data_compra: receiptData.data_compra, valor_total: receiptData.valor_total })
+    .select("id").single();
+  if (receiptErr) throw receiptErr;
+
+  const itemsToInsert = receiptData.items.map((item) => ({
+    receipt_id: receipt.id,
+    nome_produto: item.nome_produto,
+    nome_normalizado: item.nome_normalizado,
+    categoria: item.categoria,
+    quantidade: item.quantidade,
+    preco_unitario: item.preco_unitario,
+    preco_total: item.preco_total,
+  }));
+
+  const { error: itemsErr } = await supabaseAdmin.from("receipt_items").insert(itemsToInsert);
+  if (itemsErr) throw itemsErr;
+
+  await supabaseAdmin.from("audit_logs").insert({
+    user_id: userId,
+    action: "receipt_upload",
+    details: { receipt_id: receipt.id, store_id: storeId, items_count: receiptData.items.length, valor_total: receiptData.valor_total },
+    ip_address: req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || null,
+  });
+
+  return { receipt_id: receipt.id, store_id: storeId };
+}
+
 // --- Main handler ---
 
 serve(async (req) => {
@@ -130,9 +175,6 @@ serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
-
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) throw new Error("Supabase environment variables not configured");
@@ -148,7 +190,29 @@ serve(async (req) => {
     if (userError || !user) throw new Error("Unauthorized");
 
     const body = await req.json();
-    const { image_base64, image_url } = body;
+    const { mode = "parse", image_base64, image_url, receipt_data } = body;
+
+    // === MODE: SAVE ===
+    if (mode === "save") {
+      if (!receipt_data) throw new Error("receipt_data is required for save mode");
+
+      // Validate the provided data
+      const { data: validatedData, warnings } = validateAndCleanReceipt(receipt_data);
+
+      console.log("[OCR] Saving receipt from user confirmation", { user_id: user.id, items: validatedData.items.length });
+
+      const result = await saveReceipt(supabaseAdmin, user.id, validatedData, req);
+
+      return new Response(
+        JSON.stringify({ success: true, ...result, data: validatedData, warnings }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // === MODE: PARSE (OCR only, no save) ===
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
     if (!image_base64 && !image_url) throw new Error("image_base64 or image_url is required");
 
     if (image_base64 && image_base64.length > 14_000_000) {
@@ -168,7 +232,7 @@ serve(async (req) => {
       }
     }
 
-    console.log("[OCR] Starting receipt processing", { user_id: user.id, has_base64: !!image_base64, has_url: !!image_url });
+    console.log("[OCR] Starting receipt processing (parse only)", { user_id: user.id, has_base64: !!image_base64, has_url: !!image_url });
 
     const imageContent = image_base64
       ? { type: "image_url" as const, image_url: { url: `data:image/jpeg;base64,${image_base64}` } }
@@ -281,7 +345,6 @@ Se não souber a categoria, use "outros".`;
     const aiResult = await aiResponse.json();
     const toolCall = aiResult.choices?.[0]?.message?.tool_calls?.[0];
 
-    // Log raw AI response for debugging
     console.log("[OCR] Raw AI tool_call arguments:", toolCall?.function?.arguments?.substring(0, 2000));
 
     if (!toolCall) {
@@ -303,7 +366,6 @@ Se não souber a categoria, use "outros".`;
       }), { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Validate and clean
     let receiptData: ReceiptData;
     let warnings: string[] = [];
     try {
@@ -322,61 +384,12 @@ Se não souber a categoria, use "outros".`;
       }), { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    console.log("[OCR] Validated receipt:", { store: receiptData.store.nome, items: receiptData.items.length, total: receiptData.valor_total });
+    console.log("[OCR] Receipt parsed successfully (not saved)", { store: receiptData.store.nome, items: receiptData.items.length, total: receiptData.valor_total });
 
-    // --- Save to database ---
-    let storeId: string;
-    if (receiptData.store.cnpj) {
-      const { data: existingStore } = await supabaseAdmin
-        .from("stores").select("id").eq("user_id", user.id).eq("cnpj", receiptData.store.cnpj).maybeSingle();
-      if (existingStore) {
-        storeId = existingStore.id;
-        await supabaseAdmin.from("stores").update({ nome: receiptData.store.nome }).eq("id", storeId);
-      } else {
-        const { data: newStore, error: storeErr } = await supabaseAdmin
-          .from("stores").insert({ user_id: user.id, nome: receiptData.store.nome, cnpj: receiptData.store.cnpj }).select("id").single();
-        if (storeErr) throw storeErr;
-        storeId = newStore.id;
-      }
-    } else {
-      const { data: newStore, error: storeErr } = await supabaseAdmin
-        .from("stores").insert({ user_id: user.id, nome: receiptData.store.nome }).select("id").single();
-      if (storeErr) throw storeErr;
-      storeId = newStore.id;
-    }
-
-    const { data: receipt, error: receiptErr } = await supabaseAdmin
-      .from("receipts").insert({ user_id: user.id, store_id: storeId, data_compra: receiptData.data_compra, valor_total: receiptData.valor_total })
-      .select("id").single();
-    if (receiptErr) throw receiptErr;
-
-    const itemsToInsert = receiptData.items.map((item) => ({
-      receipt_id: receipt.id,
-      nome_produto: item.nome_produto,
-      nome_normalizado: item.nome_normalizado,
-      categoria: item.categoria,
-      quantidade: item.quantidade,
-      preco_unitario: item.preco_unitario,
-      preco_total: item.preco_total,
-    }));
-
-    const { error: itemsErr } = await supabaseAdmin.from("receipt_items").insert(itemsToInsert);
-    if (itemsErr) throw itemsErr;
-
-    await supabaseAdmin.from("audit_logs").insert({
-      user_id: user.id,
-      action: "receipt_upload",
-      details: { receipt_id: receipt.id, store_id: storeId, items_count: receiptData.items.length, valor_total: receiptData.valor_total, warnings },
-      ip_address: req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || null,
-    });
-
-    console.log("[OCR] Receipt saved successfully", { user_id: user.id, receipt_id: receipt.id, warnings_count: warnings.length });
-
+    // Return parsed data WITHOUT saving
     return new Response(
       JSON.stringify({
         success: true,
-        receipt_id: receipt.id,
-        store_id: storeId,
         data: receiptData,
         warnings,
       }),
