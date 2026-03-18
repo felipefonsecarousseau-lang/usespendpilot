@@ -13,6 +13,7 @@ const navItems = [
   { to: "/economia-supermercado", label: "Economia", icon: TrendingDown },
   { to: "/lista-inteligente", label: "Lista", icon: ShoppingCart },
   { to: "/gastos-detalhados", label: "Gastos", icon: PieChart },
+  { to: "/visao-financeira", label: "Visão", icon: BarChart3 },
   { to: "/premium", label: "Premium", icon: Crown },
   { to: "/minha-assinatura", label: "Assinatura", icon: CreditCard },
 ];
