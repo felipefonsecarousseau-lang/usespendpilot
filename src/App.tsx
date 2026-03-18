@@ -17,6 +17,7 @@ import ListaInteligentePage from "./pages/ListaInteligentePage";
 import PremiumPage from "./pages/PremiumPage";
 import MinhaAssinaturaPage from "./pages/MinhaAssinaturaPage";
 import GastosDetalhadosPage from "./pages/GastosDetalhadosPage";
+import VisaoFinanceiraPage from "./pages/VisaoFinanceiraPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import NotFound from "./pages/NotFound";
 
