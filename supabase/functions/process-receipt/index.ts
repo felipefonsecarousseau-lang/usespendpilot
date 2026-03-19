@@ -190,7 +190,7 @@ serve(async (req) => {
     if (userError || !user) throw new Error("Unauthorized");
 
     const body = await req.json();
-    const { mode = "parse", image_base64, image_url, receipt_data } = body;
+    const { mode = "parse", image_base64, image_url, receipt_data, mime_type } = body;
 
     // === MODE: SAVE ===
     if (mode === "save") {
@@ -232,10 +232,13 @@ serve(async (req) => {
       }
     }
 
-    console.log("[OCR] Starting receipt processing (parse only)", { user_id: user.id, has_base64: !!image_base64, has_url: !!image_url });
+    console.log("[OCR] Starting receipt processing (parse only)", { user_id: user.id, has_base64: !!image_base64, has_url: !!image_url, mime_type });
 
+    // Detect MIME type from the provided mime_type or default to jpeg
+    const detectedMime = mime_type || "image/jpeg";
+    
     const imageContent = image_base64
-      ? { type: "image_url" as const, image_url: { url: `data:image/jpeg;base64,${image_base64}` } }
+      ? { type: "image_url" as const, image_url: { url: `data:${detectedMime};base64,${image_base64}` } }
       : { type: "image_url" as const, image_url: { url: image_url } };
 
     const systemPrompt = `Você é um especialista em leitura de notas fiscais brasileiras. Analise a imagem e extraia TODOS os dados com máxima precisão.
