@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import AppLayout from "@/components/AppLayout";
+import SavedReceiptsList from "@/components/SavedReceiptsList";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -175,6 +176,7 @@ const InvoiceScanPage = () => {
       queryClient.invalidateQueries({ queryKey: ["gastos-receipt-items-prev"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-receipts"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-all-receipts"] });
+      queryClient.invalidateQueries({ queryKey: ["saved-receipts"] });
     } catch (err) {
       console.error("Save error:", err);
       toast.error("Erro ao salvar nota fiscal. Tente novamente.");
@@ -419,6 +421,9 @@ const InvoiceScanPage = () => {
             </div>
           </motion.div>
         )}
+
+        {/* Saved receipts section */}
+        <SavedReceiptsList />
       </div>
     </AppLayout>
   );
