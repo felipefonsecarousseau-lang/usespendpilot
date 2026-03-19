@@ -176,6 +176,7 @@ const InvoiceScanPage = () => {
       queryClient.invalidateQueries({ queryKey: ["gastos-receipt-items-prev"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-receipts"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-all-receipts"] });
+      queryClient.invalidateQueries({ queryKey: ["saved-receipts"] });
     } catch (err) {
       console.error("Save error:", err);
       toast.error("Erro ao salvar nota fiscal. Tente novamente.");
