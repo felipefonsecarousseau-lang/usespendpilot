@@ -91,7 +91,7 @@ const InvoiceScanPage = () => {
       const base64 = await fileToBase64(f);
 
       const { data, error } = await supabase.functions.invoke("process-receipt", {
-        body: { mode: "parse", image_base64: base64 },
+        body: { mode: "parse", image_base64: base64, mime_type: f.type },
       });
 
       if (error) {
