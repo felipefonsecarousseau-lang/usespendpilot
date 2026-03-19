@@ -163,7 +163,7 @@ export function useSavedReceipts() {
           .update({
             nome_produto: item.nome_produto,
             nome_normalizado: item.nome_normalizado,
-            categoria: item.categoria,
+            categoria: item.categoria as "mercado" | "higiene" | "limpeza" | "bebidas" | "padaria" | "hortifruti" | "outros",
             quantidade: item.quantidade,
             preco_unitario: item.preco_unitario,
             preco_total: item.preco_total,
