@@ -421,6 +421,9 @@ const InvoiceScanPage = () => {
             </div>
           </motion.div>
         )}
+
+        {/* Saved receipts section */}
+        <SavedReceiptsList />
       </div>
     </AppLayout>
   );
