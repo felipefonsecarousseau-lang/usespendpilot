@@ -180,7 +180,7 @@ export function useSavedReceipts() {
             receipt_id: receiptId,
             nome_produto: i.nome_produto,
             nome_normalizado: i.nome_normalizado,
-            categoria: i.categoria as any,
+            categoria: i.categoria as "mercado" | "higiene" | "limpeza" | "bebidas" | "padaria" | "hortifruti" | "outros",
             quantidade: i.quantidade,
             preco_unitario: i.preco_unitario,
             preco_total: i.preco_total,
