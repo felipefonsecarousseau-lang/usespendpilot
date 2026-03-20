@@ -30,7 +30,12 @@ export default function PremiumGate({ children, inline }: PremiumGateProps) {
     );
   }
 
-  if (isPremium) return <>{children}</>;
+  if (isPremium) return (
+    <>
+      <TrialBanner />
+      {children}
+    </>
+  );
 
   return (
     <div className={`flex flex-col items-center justify-center gap-6 ${inline ? "py-10" : "min-h-[70vh]"}`}>
