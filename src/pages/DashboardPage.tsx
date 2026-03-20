@@ -12,6 +12,8 @@ import { generateForecast } from "@/lib/financial-forecast";
 import { calculateFinancialScore, type ScoreLevel } from "@/lib/financial-score";
 import { generateRecommendations } from "@/lib/financial-advisor";
 import FinancialAdvisorCard from "@/components/FinancialAdvisorCard";
+import AdvancedInsightsCard from "@/components/AdvancedInsightsCard";
+import { useAdvancedInsights } from "@/hooks/useAdvancedInsights";
 import MonthlyBudgetCard from "@/components/MonthlyBudgetCard";
 import FixedExpensesDashboardCard from "@/components/FixedExpensesDashboardCard";
 import PremiumGate from "@/components/PremiumGate";
@@ -87,6 +89,7 @@ const SCORE_LABELS: Record<ScoreLevel, string> = {
 
 const DashboardPage = () => {
   const { needsOnboarding, isLoading: onboardingLoading } = useOnboarding();
+  const { insights: advancedInsights } = useAdvancedInsights();
 
   const now = new Date();
   const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
@@ -482,6 +485,9 @@ const DashboardPage = () => {
           {/* Financial Advisor */}
           {hasData && <FinancialAdvisorCard recommendations={recommendations} />}
         </PremiumGate>
+
+        {/* Advanced Insights — always visible */}
+        <AdvancedInsightsCard insights={advancedInsights} />
       </div>
     </AppLayout>
   );
