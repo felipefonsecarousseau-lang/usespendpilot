@@ -89,6 +89,7 @@ const SCORE_LABELS: Record<ScoreLevel, string> = {
 
 const DashboardPage = () => {
   const { needsOnboarding, isLoading: onboardingLoading } = useOnboarding();
+  const { insights: advancedInsights } = useAdvancedInsights();
 
   const now = new Date();
   const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
