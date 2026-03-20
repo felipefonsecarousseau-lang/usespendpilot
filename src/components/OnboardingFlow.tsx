@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useOnboarding } from "@/hooks/useOnboarding";
+import { useFullPlanStatus } from "@/hooks/usePremiumStatus";
 import { toast } from "sonner";
 
 const GOALS = [
