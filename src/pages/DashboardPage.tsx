@@ -12,6 +12,8 @@ import { generateForecast } from "@/lib/financial-forecast";
 import { calculateFinancialScore, type ScoreLevel } from "@/lib/financial-score";
 import { generateRecommendations } from "@/lib/financial-advisor";
 import FinancialAdvisorCard from "@/components/FinancialAdvisorCard";
+import AdvancedInsightsCard from "@/components/AdvancedInsightsCard";
+import { useAdvancedInsights } from "@/hooks/useAdvancedInsights";
 import MonthlyBudgetCard from "@/components/MonthlyBudgetCard";
 import FixedExpensesDashboardCard from "@/components/FixedExpensesDashboardCard";
 import PremiumGate from "@/components/PremiumGate";
