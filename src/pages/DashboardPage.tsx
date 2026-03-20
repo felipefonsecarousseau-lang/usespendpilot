@@ -258,6 +258,7 @@ const DashboardPage = () => {
   return (
     <AppLayout>
       <div className="max-w-5xl mx-auto space-y-6">
+        <TrialBanner />
         {/* Header */}
         <div>
           <p className="text-sm text-muted-foreground capitalize">{monthName}</p>
