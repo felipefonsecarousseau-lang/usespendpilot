@@ -29,6 +29,7 @@ export default function OnboardingFlow() {
   const [budgetValue, setBudgetValue] = useState("");
   const navigate = useNavigate();
   const { completeOnboarding } = useOnboarding();
+  const { data: plan } = useFullPlanStatus();
 
   const goNext = () => {
     setDirection(1);
