@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { Link } from "react-router-dom";
+import TrialBanner from "@/components/TrialBanner";
 import { Crown, TrendingUp, Brain, ShoppingCart, BarChart3, Sparkles, GitCompareArrows } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePremiumStatus } from "@/hooks/usePremiumStatus";
