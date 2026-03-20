@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useOnboarding } from "@/hooks/useOnboarding";
+import { useFullPlanStatus } from "@/hooks/usePremiumStatus";
 import { toast } from "sonner";
 
 const GOALS = [
@@ -28,6 +29,7 @@ export default function OnboardingFlow() {
   const [budgetValue, setBudgetValue] = useState("");
   const navigate = useNavigate();
   const { completeOnboarding } = useOnboarding();
+  const { data: plan } = useFullPlanStatus();
 
   const goNext = () => {
     setDirection(1);
@@ -70,6 +72,12 @@ export default function OnboardingFlow() {
       <h1 className="text-2xl md:text-3xl font-bold text-foreground leading-tight">
         Descubra para onde seu dinheiro está indo e economize todo mês.
       </h1>
+      {plan?.isTrial && plan.trialDaysLeft && plan.trialDaysLeft > 0 && (
+        <div className="flex items-center gap-2 rounded-lg border border-accent/40 bg-accent/10 px-4 py-2.5 text-sm text-accent-foreground">
+          <Crown className="h-4 w-4 shrink-0" />
+          <span>🎉 Você tem <strong>{plan.trialDaysLeft} dias grátis</strong> de Premium! Aproveite todos os recursos.</span>
+        </div>
+      )}
       <div className="space-y-3 text-sm text-muted-foreground">
         <p>📸 Escaneie notas fiscais automaticamente</p>
         <p>📊 Acompanhe seus gastos mensais</p>

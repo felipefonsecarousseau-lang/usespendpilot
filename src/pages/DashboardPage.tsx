@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "@/components/AppLayout";
+import TrialBanner from "@/components/TrialBanner";
 import { generateForecast } from "@/lib/financial-forecast";
 import { calculateFinancialScore, type ScoreLevel } from "@/lib/financial-score";
 import { generateRecommendations } from "@/lib/financial-advisor";
@@ -257,6 +258,7 @@ const DashboardPage = () => {
   return (
     <AppLayout>
       <div className="max-w-5xl mx-auto space-y-6">
+        <TrialBanner />
         {/* Header */}
         <div>
           <p className="text-sm text-muted-foreground capitalize">{monthName}</p>
