@@ -157,7 +157,7 @@ const LandingPage = () => {
             variants={fadeUp}
             className="text-3xl md:text-4xl font-bold text-foreground"
           >
-            🛒 Compare preços com base na sua vida real
+            🛒 Compare preços no supermercado com base na sua vida real
           </motion.h2>
           <motion.p
             variants={fadeUp}
