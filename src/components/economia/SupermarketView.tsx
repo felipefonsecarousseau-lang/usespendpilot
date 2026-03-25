@@ -176,7 +176,7 @@ const SupermarketView = ({ enrichedItems, period }: Props) => {
     // Use normalized base names for grouping
     const prodStoreBuild = new Map<string, Map<string, { totalPrice: number; count: number }>>();
     normalizedItems.forEach((item) => {
-      const key = item.norm.baseName.toLowerCase();
+      const key = item.norm.baseNameClean;
       if (!prodStoreBuild.has(key)) prodStoreBuild.set(key, new Map());
       const sm = prodStoreBuild.get(key)!;
       const e = sm.get(item.store_id) || { totalPrice: 0, count: 0 };
