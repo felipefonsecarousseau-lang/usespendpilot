@@ -200,7 +200,7 @@ const LandingPage = () => {
             variants={fadeUp}
             className="text-3xl md:text-4xl font-bold text-foreground"
           >
-            📊 Veja onde está o dinheiro
+            📊 Controle de gastos: veja onde está o seu dinheiro
           </motion.h2>
           <motion.p
             variants={fadeUp}
