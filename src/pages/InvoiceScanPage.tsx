@@ -358,6 +358,33 @@ const InvoiceScanPage = () => {
                           step={0.01}
                         />
                       </div>
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          <label className="text-[10px] text-muted-foreground">Peso/Volume</label>
+                          <Input
+                            type="number"
+                            value={item.peso_quantidade ?? ""}
+                            onChange={(e) => updateItem(i, "peso_quantidade", e.target.value ? Number(e.target.value) : null)}
+                            placeholder="Ex: 5"
+                            className="text-sm"
+                            min={0}
+                            step={0.01}
+                          />
+                        </div>
+                        <div className="w-24">
+                          <label className="text-[10px] text-muted-foreground">Unidade</label>
+                          <select
+                            value={item.unidade || ""}
+                            onChange={(e) => updateItem(i, "unidade", e.target.value || null)}
+                            className="w-full h-10 rounded-md border border-input bg-background px-2 text-sm"
+                          >
+                            <option value="">—</option>
+                            {UNIDADES.map((u) => (
+                              <option key={u} value={u}>{u}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
                       <div className="flex items-center gap-2">
                         <select
                           value={item.categoria}
