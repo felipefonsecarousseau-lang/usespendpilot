@@ -123,7 +123,7 @@ const LandingPage = () => {
             variants={fadeUp}
             className="text-3xl md:text-4xl font-bold text-foreground"
           >
-            💥 Economize sem mudar sua rotina
+            💥 Economize no supermercado sem mudar sua rotina
           </motion.h2>
           <motion.p
             variants={fadeUp}
