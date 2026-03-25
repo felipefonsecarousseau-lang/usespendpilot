@@ -131,13 +131,51 @@ const GastosDetalhadosPage = () => {
     refetchOnWindowFocus: true,
   });
 
-  // ─── Fetch fixed expenses ───
-  const { data: fixedExpenses = [], isLoading: loadingFixed } = useQuery({
-    queryKey: ["gastos-fixed"],
+  // ─── Fetch fixed expense occurrences (actual monthly records, date-filtered) ───
+  const { data: fixedOccurrences = [], isLoading: loadingFixed } = useQuery({
+    queryKey: ["gastos-fixed-occurrences", dateRange],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
-      const { data } = await supabase.from("fixed_expenses").select("*").eq("user_id", user.id).eq("ativo", true);
+      const { data } = await supabase
+        .from("fixed_expense_occurrences")
+        .select("valor, mes, status, fixed_expense_id, fixed_expenses!inner(nome, categoria)")
+        .eq("user_id", user.id)
+        .gte("mes", format(dateRange.from, "yyyy-MM-dd"))
+        .lte("mes", format(dateRange.to, "yyyy-MM-dd"));
+      return data || [];
+    },
+    refetchOnWindowFocus: true,
+  });
+
+  // ─── Fetch previous period fixed occurrences ───
+  const { data: prevFixedOccurrences = [] } = useQuery({
+    queryKey: ["gastos-fixed-occurrences-prev", prevDateRange],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      const { data } = await supabase
+        .from("fixed_expense_occurrences")
+        .select("valor, mes, status, fixed_expense_id, fixed_expenses!inner(nome, categoria)")
+        .eq("user_id", user.id)
+        .gte("mes", format(prevDateRange.from, "yyyy-MM-dd"))
+        .lte("mes", format(prevDateRange.to, "yyyy-MM-dd"));
+      return data || [];
+    },
+  });
+
+  // ─── Fetch previous period manual expenses ───
+  const { data: prevManualExpenses = [] } = useQuery({
+    queryKey: ["gastos-manual-expenses-prev", prevDateRange],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      const { data } = await supabase
+        .from("manual_expenses")
+        .select("*")
+        .eq("user_id", user.id)
+        .gte("data", format(prevDateRange.from, "yyyy-MM-dd"))
+        .lte("data", format(prevDateRange.to, "yyyy-MM-dd"));
       return data || [];
     },
   });
@@ -154,9 +192,9 @@ const GastosDetalhadosPage = () => {
     }
 
     if (expenseType !== "variavel" && expenseType !== "manual") {
-      fixedExpenses.forEach((exp: any) => {
-        const cat = (exp.categoria || "Outros").toLowerCase();
-        map.set(cat, (map.get(cat) || 0) + Number(exp.valor));
+      fixedOccurrences.forEach((occ: any) => {
+        const cat = ((occ.fixed_expenses as any)?.categoria || "Outros").toLowerCase();
+        map.set(cat, (map.get(cat) || 0) + Number(occ.valor));
       });
     }
 
@@ -170,29 +208,31 @@ const GastosDetalhadosPage = () => {
     return Array.from(map.entries())
       .map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }))
       .sort((a, b) => b.value - a.value);
-  }, [receiptItems, fixedExpenses, manualExpenses, expenseType]);
+  }, [receiptItems, fixedOccurrences, manualExpenses, expenseType]);
 
   // ─── Previous period aggregation for comparison ───
   const prevCategoryData = useMemo(() => {
     const map = new Map<string, number>();
-    prevReceiptItems.forEach((item: any) => {
-      const cat = item.categoria || "outros";
-      map.set(cat, (map.get(cat) || 0) + Number(item.preco_total));
-    });
+    if (expenseType !== "fixo" && expenseType !== "manual") {
+      prevReceiptItems.forEach((item: any) => {
+        const cat = item.categoria || "outros";
+        map.set(cat, (map.get(cat) || 0) + Number(item.preco_total));
+      });
+    }
     if (expenseType !== "variavel" && expenseType !== "manual") {
-      fixedExpenses.forEach((exp: any) => {
-        const cat = (exp.categoria || "Outros").toLowerCase();
-        map.set(cat, (map.get(cat) || 0) + Number(exp.valor));
+      prevFixedOccurrences.forEach((occ: any) => {
+        const cat = ((occ.fixed_expenses as any)?.categoria || "Outros").toLowerCase();
+        map.set(cat, (map.get(cat) || 0) + Number(occ.valor));
       });
     }
     if (expenseType !== "variavel" && expenseType !== "fixo") {
-      manualExpenses.forEach((me: any) => {
+      prevManualExpenses.forEach((me: any) => {
         const cat = (me.categoria || "outros").toLowerCase();
         map.set(cat, (map.get(cat) || 0) + Number(me.valor));
       });
     }
     return new Map(map);
-  }, [prevReceiptItems, fixedExpenses, expenseType]);
+  }, [prevReceiptItems, prevFixedOccurrences, prevManualExpenses, expenseType]);
 
   const totalGasto = categoryData.reduce((s, c) => s + c.value, 0);
   const topCategory = categoryData[0];
