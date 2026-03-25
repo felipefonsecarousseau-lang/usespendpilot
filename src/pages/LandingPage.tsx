@@ -123,7 +123,7 @@ const LandingPage = () => {
             variants={fadeUp}
             className="text-3xl md:text-4xl font-bold text-foreground"
           >
-            💥 Economize sem mudar sua rotina
+            💥 Economize no supermercado sem mudar sua rotina
           </motion.h2>
           <motion.p
             variants={fadeUp}
@@ -157,7 +157,7 @@ const LandingPage = () => {
             variants={fadeUp}
             className="text-3xl md:text-4xl font-bold text-foreground"
           >
-            🛒 Compare preços com base na sua vida real
+            🛒 Compare preços no supermercado com base na sua vida real
           </motion.h2>
           <motion.p
             variants={fadeUp}
@@ -200,7 +200,7 @@ const LandingPage = () => {
             variants={fadeUp}
             className="text-3xl md:text-4xl font-bold text-foreground"
           >
-            📊 Veja onde está o dinheiro
+            📊 Controle de gastos: veja onde está o seu dinheiro
           </motion.h2>
           <motion.p
             variants={fadeUp}
@@ -237,7 +237,7 @@ const LandingPage = () => {
             variants={fadeUp}
             className="text-3xl md:text-4xl font-bold text-foreground"
           >
-            📸 Escaneie notas e automatize tudo
+            📸 Escaneie notas fiscais e automatize seu controle de gastos
           </motion.h2>
           <motion.p
             variants={fadeUp}
@@ -270,7 +270,7 @@ const LandingPage = () => {
             variants={fadeUp}
             className="text-3xl md:text-4xl font-bold text-foreground"
           >
-            💡 Sugestões reais de economia
+            💡 Sugestões reais para economizar no supermercado
           </motion.h2>
           <motion.p
             variants={fadeUp}
@@ -307,7 +307,7 @@ const LandingPage = () => {
             variants={fadeUp}
             className="text-3xl md:text-4xl font-bold text-foreground"
           >
-            ⚡ Registre qualquer gasto em segundos
+            ⚡ Registre qualquer gasto em segundos e mantenha o controle
           </motion.h2>
           <motion.p
             variants={fadeUp}
@@ -340,7 +340,7 @@ const LandingPage = () => {
             variants={fadeUp}
             className="text-3xl md:text-4xl font-bold text-foreground"
           >
-            📈 Entenda sua evolução financeira
+            📈 Acompanhe sua evolução financeira e economize mais
           </motion.h2>
           <div className="mt-8 space-y-4">
             <FeatureItem icon={TrendingUp} text="Compare meses" />
@@ -364,7 +364,7 @@ const LandingPage = () => {
             variants={fadeUp}
             className="text-3xl md:text-4xl font-bold text-foreground"
           >
-            🎯 Defina metas e economize de verdade
+            🎯 Defina metas de economia e gaste menos no supermercado
           </motion.h2>
           <div className="mt-8 space-y-4">
             <FeatureItem icon={Target} text="Limite mensal claro" />
