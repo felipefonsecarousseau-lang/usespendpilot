@@ -159,7 +159,30 @@ const GoalDetailPage = () => {
             <div className="glass-card p-4 text-center space-y-1">
               <PiggyBank className="h-4 w-4 mx-auto text-primary" />
               <p className="text-xs text-muted-foreground">Guardado</p>
-              <p className="text-sm font-semibold">{formatCurrency(goal.valor_guardado)}</p>
+              {editingSaved ? (
+                <div className="flex items-center gap-1 justify-center">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editSavedValue}
+                    onChange={e => setEditSavedValue(e.target.value)}
+                    className="h-7 w-24 text-xs bg-secondary text-center"
+                    autoFocus
+                    onKeyDown={e => e.key === "Enter" && updateSavedAmount()}
+                  />
+                  <button onClick={updateSavedAmount} className="text-primary hover:text-primary/80">
+                    <Check className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => { setEditSavedValue(goal.valor_guardado.toString()); setEditingSaved(true); }}
+                  className="text-sm font-semibold inline-flex items-center gap-1 hover:text-primary transition-colors"
+                >
+                  {formatCurrency(goal.valor_guardado)}
+                  <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-50" />
+                </button>
+              )}
             </div>
             <div className="glass-card p-4 text-center space-y-1">
               <TrendingUp className="h-4 w-4 mx-auto text-accent" />
