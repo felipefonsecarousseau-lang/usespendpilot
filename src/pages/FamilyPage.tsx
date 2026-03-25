@@ -78,12 +78,13 @@ const FamilyPage = () => {
     if (!gNome || !gValorAlvo) { toast.error("Preencha todos os campos."); return; }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+    const guardado = gValorGuardado ? parseFloat(gValorGuardado) : 0;
     const { error } = await supabase.from("goals").insert({
-      user_id: user.id, nome: gNome, valor_alvo: parseFloat(gValorAlvo), valor_guardado: 0,
+      user_id: user.id, nome: gNome, valor_alvo: parseFloat(gValorAlvo), valor_guardado: guardado,
     } as any);
     if (error) { toast.error("Erro ao salvar."); return; }
     toast.success("Objetivo adicionado!");
-    setGNome(""); setGValorAlvo(""); setShowGoalForm(false);
+    setGNome(""); setGValorAlvo(""); setGValorGuardado(""); setShowGoalForm(false);
     fetchData();
   };
 
