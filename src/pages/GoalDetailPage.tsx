@@ -25,6 +25,8 @@ const GoalDetailPage = () => {
   const [totalRenda, setTotalRenda] = useState(0);
   const [loading, setLoading] = useState(true);
   const [depositAmount, setDepositAmount] = useState("");
+  const [editingSaved, setEditingSaved] = useState(false);
+  const [editSavedValue, setEditSavedValue] = useState("");
 
   useEffect(() => {
     fetchGoal();
