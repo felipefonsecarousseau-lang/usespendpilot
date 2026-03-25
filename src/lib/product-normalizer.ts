@@ -2,10 +2,36 @@
 // Extracts base name, quantity, unit, and pricePerUnit from product names.
 
 export interface NormalizedProduct {
-  baseName: string;       // e.g. "Arroz"
-  quantity: number | null; // e.g. 5
-  unit: string | null;     // e.g. "kg"
+  baseName: string;            // e.g. "Arroz" (display-friendly)
+  baseNameClean: string;       // e.g. "arroz" (accent-free, lowercase, for grouping)
+  quantity: number | null;     // e.g. 5
+  unit: string | null;         // e.g. "kg"
   pricePerUnit: number | null; // e.g. R$/kg
+}
+
+/**
+ * Remove diacritics/accents from a string.
+ * "Café" → "Cafe", "Açúcar" → "Acucar"
+ */
+function removeAccents(str: string): string {
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+/**
+ * Produce a clean key for comparison: no accents, lowercase,
+ * no special chars, collapsed whitespace, no noise words.
+ */
+function cleanForComparison(baseName: string): string {
+  let clean = removeAccents(baseName).toLowerCase();
+  // Remove special characters except spaces
+  clean = clean.replace(/[^a-z0-9\s]/g, " ");
+  // Remove noise words (already stripped in extractBaseName, but ensure)
+  clean = clean.replace(/\b(tipo|tp|t\.|marca|extra|especial|premium|integral|tradicional|branco|branca|light|zero|diet)\b/g, "");
+  // Collapse whitespace
+  clean = clean.replace(/\s{2,}/g, " ").trim();
+  // Basic plural → singular (Portuguese simple rules)
+  clean = clean.replace(/\b(\w{3,})s\b/g, "$1");
+  return clean;
 }
 
 // Unit aliases → canonical form
@@ -88,16 +114,15 @@ export function normalizeProduct(
 ): NormalizedProduct {
   const { quantity: parsedQty, unit: parsedUnit } = parseQuantityUnit(rawName);
   const baseName = extractBaseName(rawName);
+  const baseNameClean = cleanForComparison(baseName);
 
   // Calculate pricePerUnit if we have enough info
   let pricePerUnit: number | null = null;
 
   if (parsedQty && parsedQty > 0 && itemPriceTotal > 0) {
-    // Convert to base unit for consistent comparison
     let effectiveQty = parsedQty;
     let effectiveUnit = parsedUnit;
 
-    // Normalize g → kg, mL → L for pricePerUnit
     if (parsedUnit === "g" && parsedQty >= 1) {
       effectiveQty = parsedQty / 1000;
       effectiveUnit = "kg";
@@ -106,14 +131,13 @@ export function normalizeProduct(
       effectiveUnit = "L";
     }
 
-    // Price per base unit (per item, not per receipt line)
     const pricePerItem = itemPriceTotal / itemQuantity;
     pricePerUnit = Math.round((pricePerItem / effectiveQty) * 100) / 100;
 
-    return { baseName, quantity: parsedQty, unit: effectiveUnit, pricePerUnit };
+    return { baseName, baseNameClean, quantity: parsedQty, unit: effectiveUnit, pricePerUnit };
   }
 
-  return { baseName, quantity: parsedQty, unit: parsedUnit, pricePerUnit };
+  return { baseName, baseNameClean, quantity: parsedQty, unit: parsedUnit, pricePerUnit };
 }
 
 /**
@@ -128,12 +152,12 @@ export function formatPricePerUnit(price: number, unit: string | null): string {
 /**
  * Group products by normalized base name for comparison.
  */
-export function groupByBaseName<T extends { baseName: string }>(
+export function groupByBaseName<T extends { baseNameClean: string }>(
   items: T[]
 ): Map<string, T[]> {
   const map = new Map<string, T[]>();
   for (const item of items) {
-    const key = item.baseName.toLowerCase();
+    const key = item.baseNameClean;
     const list = map.get(key) || [];
     list.push(item);
     map.set(key, list);

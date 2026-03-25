@@ -46,14 +46,14 @@ const SupermarketView = ({ enrichedItems, period }: Props) => {
 
   // Group products by normalized base name for the selector
   const productGroups = useMemo(() => {
-    const map = new Map<string, { baseName: string; count: number }>();
+    const map = new Map<string, { baseName: string; baseNameClean: string; count: number }>();
     normalizedItems.forEach((item) => {
-      const key = item.norm.baseName.toLowerCase();
+      const key = item.norm.baseNameClean;
       const existing = map.get(key);
       if (existing) {
         existing.count++;
       } else {
-        map.set(key, { baseName: item.norm.baseName, count: 1 });
+        map.set(key, { baseName: item.norm.baseName, baseNameClean: key, count: 1 });
       }
     });
     return [...map.values()].sort((a, b) => a.baseName.localeCompare(b.baseName));
@@ -64,7 +64,7 @@ const SupermarketView = ({ enrichedItems, period }: Props) => {
     if (selectedProduct === "all") return null;
 
     const items = normalizedItems.filter(
-      (i) => i.norm.baseName.toLowerCase() === selectedProduct
+      (i) => i.norm.baseNameClean === selectedProduct
     );
     if (items.length === 0) return null;
 
@@ -176,7 +176,7 @@ const SupermarketView = ({ enrichedItems, period }: Props) => {
     // Use normalized base names for grouping
     const prodStoreBuild = new Map<string, Map<string, { totalPrice: number; count: number }>>();
     normalizedItems.forEach((item) => {
-      const key = item.norm.baseName.toLowerCase();
+      const key = item.norm.baseNameClean;
       if (!prodStoreBuild.has(key)) prodStoreBuild.set(key, new Map());
       const sm = prodStoreBuild.get(key)!;
       const e = sm.get(item.store_id) || { totalPrice: 0, count: 0 };
@@ -215,7 +215,7 @@ const SupermarketView = ({ enrichedItems, period }: Props) => {
           <SelectContent>
             <SelectItem value="all">Visão geral (todos os produtos)</SelectItem>
             {productGroups.map((p) => (
-              <SelectItem key={p.baseName.toLowerCase()} value={p.baseName.toLowerCase()}>
+              <SelectItem key={p.baseNameClean} value={p.baseNameClean}>
                 {p.baseName} ({p.count})
               </SelectItem>
             ))}
@@ -244,7 +244,7 @@ const SupermarketView = ({ enrichedItems, period }: Props) => {
               </div>
               <div>
                 <h2 className="text-base font-semibold">
-                  {productGroups.find((p) => p.baseName.toLowerCase() === selectedProduct)?.baseName || selectedProduct}
+                  {productGroups.find((p) => p.baseNameClean === selectedProduct)?.baseName || selectedProduct}
                 </h2>
                 <p className="text-xs text-muted-foreground">{productAnalysis.totalCompras} compras analisadas</p>
               </div>
