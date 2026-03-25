@@ -39,6 +39,7 @@ const FamilyPage = () => {
   const [showGoalForm, setShowGoalForm] = useState(false);
   const [gNome, setGNome] = useState("");
   const [gValorAlvo, setGValorAlvo] = useState("");
+  const [gValorGuardado, setGValorGuardado] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -77,12 +78,13 @@ const FamilyPage = () => {
     if (!gNome || !gValorAlvo) { toast.error("Preencha todos os campos."); return; }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+    const guardado = gValorGuardado ? parseFloat(gValorGuardado) : 0;
     const { error } = await supabase.from("goals").insert({
-      user_id: user.id, nome: gNome, valor_alvo: parseFloat(gValorAlvo), valor_guardado: 0,
+      user_id: user.id, nome: gNome, valor_alvo: parseFloat(gValorAlvo), valor_guardado: guardado,
     } as any);
     if (error) { toast.error("Erro ao salvar."); return; }
     toast.success("Objetivo adicionado!");
-    setGNome(""); setGValorAlvo(""); setShowGoalForm(false);
+    setGNome(""); setGValorAlvo(""); setGValorGuardado(""); setShowGoalForm(false);
     fetchData();
   };
 
@@ -186,6 +188,7 @@ const FamilyPage = () => {
                 <Input placeholder="Ex: Viagem para Europa" value={gNome} onChange={e => setGNome(e.target.value)} className="bg-secondary" />
                 <Input placeholder="Valor necessário" type="number" step="0.01" value={gValorAlvo} onChange={e => setGValorAlvo(e.target.value)} className="bg-secondary" />
               </div>
+              <Input placeholder="Quanto já juntou? (opcional)" type="number" step="0.01" value={gValorGuardado} onChange={e => setGValorGuardado(e.target.value)} className="bg-secondary" />
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" size="sm" onClick={() => setShowGoalForm(false)}>Cancelar</Button>
                 <Button size="sm" onClick={addGoal}>Adicionar</Button>

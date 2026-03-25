@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Plus, Loader2, Target, TrendingUp, Clock, PiggyBank } from "lucide-react";
+import { ArrowLeft, Plus, Loader2, Target, TrendingUp, Clock, PiggyBank, Pencil, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -25,6 +25,8 @@ const GoalDetailPage = () => {
   const [totalRenda, setTotalRenda] = useState(0);
   const [loading, setLoading] = useState(true);
   const [depositAmount, setDepositAmount] = useState("");
+  const [editingSaved, setEditingSaved] = useState(false);
+  const [editSavedValue, setEditSavedValue] = useState("");
 
   useEffect(() => {
     fetchGoal();
@@ -54,6 +56,20 @@ const GoalDetailPage = () => {
     toast.success("Depósito registrado!");
     setDepositAmount("");
     setGoal({ ...goal, valor_guardado: newVal });
+  };
+
+  const updateSavedAmount = async () => {
+    if (!goal) return;
+    const newVal = parseFloat(editSavedValue.replace(",", "."));
+    if (isNaN(newVal) || newVal < 0) { toast.error("Valor inválido."); return; }
+    const { error } = await supabase
+      .from("goals")
+      .update({ valor_guardado: newVal } as any)
+      .eq("id", goal.id);
+    if (error) { toast.error("Erro ao atualizar."); return; }
+    toast.success("Valor atualizado!");
+    setGoal({ ...goal, valor_guardado: newVal });
+    setEditingSaved(false);
   };
 
   const formatCurrency = (val: number) => {
@@ -143,7 +159,30 @@ const GoalDetailPage = () => {
             <div className="glass-card p-4 text-center space-y-1">
               <PiggyBank className="h-4 w-4 mx-auto text-primary" />
               <p className="text-xs text-muted-foreground">Guardado</p>
-              <p className="text-sm font-semibold">{formatCurrency(goal.valor_guardado)}</p>
+              {editingSaved ? (
+                <div className="flex items-center gap-1 justify-center">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editSavedValue}
+                    onChange={e => setEditSavedValue(e.target.value)}
+                    className="h-7 w-24 text-xs bg-secondary text-center"
+                    autoFocus
+                    onKeyDown={e => e.key === "Enter" && updateSavedAmount()}
+                  />
+                  <button onClick={updateSavedAmount} className="text-primary hover:text-primary/80">
+                    <Check className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => { setEditSavedValue(goal.valor_guardado.toString()); setEditingSaved(true); }}
+                  className="text-sm font-semibold inline-flex items-center gap-1 hover:text-primary transition-colors"
+                >
+                  {formatCurrency(goal.valor_guardado)}
+                  <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-50" />
+                </button>
+              )}
             </div>
             <div className="glass-card p-4 text-center space-y-1">
               <TrendingUp className="h-4 w-4 mx-auto text-accent" />
