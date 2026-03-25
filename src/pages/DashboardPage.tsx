@@ -213,18 +213,18 @@ const DashboardPage = () => {
   const hasData = totalGasto > 0;
 
   const forecast = useMemo(
-    () => generateForecast(allReceipts as any, rendaMensal, fixedTotals.total, manualExpenses as any),
-    [allReceipts, rendaMensal, fixedTotals.total, manualExpenses]
+    () => generateForecast(allReceipts as any, rendaMensal, fixedTotals.total, allManualExpenses as any),
+    [allReceipts, rendaMensal, fixedTotals.total, allManualExpenses]
   );
 
   const financialScore = useMemo(
-    () => calculateFinancialScore(allReceipts as any, rendaMensal, fixedTotals.total, manualExpenses as any),
-    [allReceipts, rendaMensal, fixedTotals.total, manualExpenses]
+    () => calculateFinancialScore(allReceipts as any, rendaMensal, fixedTotals.total, allManualExpenses as any),
+    [allReceipts, rendaMensal, fixedTotals.total, allManualExpenses]
   );
 
   const recommendations = useMemo(
-    () => generateRecommendations(allReceipts as any, rendaMensal, fixedTotals.total, manualExpenses as any),
-    [allReceipts, rendaMensal, fixedTotals.total, manualExpenses]
+    () => generateRecommendations(allReceipts as any, rendaMensal, fixedTotals.total, allManualExpenses as any),
+    [allReceipts, rendaMensal, fixedTotals.total, allManualExpenses]
   );
 
   // Build alerts from forecast
