@@ -140,6 +140,19 @@ const DashboardPage = () => {
     },
   });
 
+  // Fetch ALL manual expenses for forecast/score/advisor (needs historical data)
+  const { data: allManualExpenses = [] } = useQuery({
+    queryKey: ["dashboard-all-manual-expenses"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("manual_expenses")
+        .select("valor, categoria, nome, data")
+        .order("data", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   // Fetch family income
   const { data: familyMembers = [] } = useQuery({
     queryKey: ["dashboard-family"],
