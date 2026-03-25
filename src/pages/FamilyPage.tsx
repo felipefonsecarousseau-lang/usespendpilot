@@ -39,6 +39,7 @@ const FamilyPage = () => {
   const [showGoalForm, setShowGoalForm] = useState(false);
   const [gNome, setGNome] = useState("");
   const [gValorAlvo, setGValorAlvo] = useState("");
+  const [gValorGuardado, setGValorGuardado] = useState("");
 
   useEffect(() => {
     fetchData();
