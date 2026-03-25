@@ -121,14 +121,23 @@ const InvoiceScanPage = () => {
         setWarnings(data.warnings || []);
 
         setItems(
-          receipt.items.map((item: any) => ({
-            nome_produto: item.nome_produto,
-            nome_normalizado: item.nome_normalizado,
-            valor: item.preco_total,
-            preco_unitario: item.preco_unitario,
-            quantidade: item.quantidade,
-            categoria: item.categoria,
-          }))
+          receipt.items.map((item: any) => {
+            const norm = normalizeProduct(
+              item.nome_normalizado || item.nome_produto,
+              item.quantidade || 1,
+              item.preco_total || 0
+            );
+            return {
+              nome_produto: item.nome_produto,
+              nome_normalizado: item.nome_normalizado,
+              valor: item.preco_total,
+              preco_unitario: item.preco_unitario,
+              quantidade: item.quantidade,
+              categoria: item.categoria,
+              peso_quantidade: norm.quantity,
+              unidade: norm.unit,
+            };
+          })
         );
 
         if (data.warnings?.length > 0) {
