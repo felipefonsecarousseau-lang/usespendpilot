@@ -244,7 +244,7 @@ const SupermarketView = ({ enrichedItems, period }: Props) => {
               </div>
               <div>
                 <h2 className="text-base font-semibold">
-                  {productGroups.find((p) => p.baseName.toLowerCase() === selectedProduct)?.baseName || selectedProduct}
+                  {productGroups.find((p) => p.baseNameClean === selectedProduct)?.baseName || selectedProduct}
                 </h2>
                 <p className="text-xs text-muted-foreground">{productAnalysis.totalCompras} compras analisadas</p>
               </div>
