@@ -364,7 +364,7 @@ const LandingPage = () => {
             variants={fadeUp}
             className="text-3xl md:text-4xl font-bold text-foreground"
           >
-            🎯 Defina metas e economize de verdade
+            🎯 Defina metas de economia e gaste menos no supermercado
           </motion.h2>
           <div className="mt-8 space-y-4">
             <FeatureItem icon={Target} text="Limite mensal claro" />
