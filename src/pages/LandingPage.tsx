@@ -340,7 +340,7 @@ const LandingPage = () => {
             variants={fadeUp}
             className="text-3xl md:text-4xl font-bold text-foreground"
           >
-            📈 Entenda sua evolução financeira
+            📈 Acompanhe sua evolução financeira e economize mais
           </motion.h2>
           <div className="mt-8 space-y-4">
             <FeatureItem icon={TrendingUp} text="Compare meses" />
