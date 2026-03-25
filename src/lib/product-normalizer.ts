@@ -152,12 +152,12 @@ export function formatPricePerUnit(price: number, unit: string | null): string {
 /**
  * Group products by normalized base name for comparison.
  */
-export function groupByBaseName<T extends { baseName: string }>(
+export function groupByBaseName<T extends { baseNameClean: string }>(
   items: T[]
 ): Map<string, T[]> {
   const map = new Map<string, T[]>();
   for (const item of items) {
-    const key = item.baseName.toLowerCase();
+    const key = item.baseNameClean;
     const list = map.get(key) || [];
     list.push(item);
     map.set(key, list);
