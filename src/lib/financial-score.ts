@@ -22,6 +22,12 @@ interface ReceiptRow {
   receipt_items: { categoria: string; preco_total: number }[];
 }
 
+interface ManualExpenseRow {
+  valor: number;
+  data: string;
+  categoria: string;
+}
+
 function monthKey(date: string) {
   return date.slice(0, 7);
 }
@@ -41,26 +47,27 @@ const LEVEL_LABELS: Record<ScoreLevel, string> = {
 };
 
 // Categories considered "critical" for overspending
-const CRITICAL_CATS = ["bebidas", "padaria", "outros"];
+const CRITICAL_CATS = ["bebidas", "padaria", "outros", "lazer"];
 
 export function calculateFinancialScore(
   receipts: ReceiptRow[],
   rendaMensal: number,
-  fixedExpensesTotal = 0
+  fixedExpensesTotal = 0,
+  manualExpenses: ManualExpenseRow[] = []
 ): FinancialScore {
-  if (rendaMensal <= 0 || (receipts.length === 0 && fixedExpensesTotal <= 0)) {
+  if (rendaMensal <= 0 || (receipts.length === 0 && fixedExpensesTotal <= 0 && manualExpenses.length === 0)) {
     return {
       score: 0,
       nivel: "critico",
       detalhes: { gasto_vs_renda: 0, poupanca: 0, estabilidade: 0, controle_categorias: 0 },
-      insight: "Adicione sua renda e notas fiscais para calcular seu score financeiro.",
+      insight: "Adicione sua renda e registre gastos para calcular seu score financeiro.",
     };
   }
 
   const now = new Date();
   const currentMonth = monthKey(now.toISOString());
 
-  // Group totals by month
+  // Group totals by month (receipts + manual)
   const monthlyTotals: Record<string, number> = {};
   const monthlyCatTotals: Record<string, Record<string, number>> = {};
 
@@ -72,6 +79,17 @@ export function calculateFinancialScore(
       if (!monthlyCatTotals[mk]) monthlyCatTotals[mk] = {};
       monthlyCatTotals[mk][cat] = (monthlyCatTotals[mk][cat] || 0) + item.preco_total;
     }
+  }
+
+  // Include manual expenses
+  for (const me of manualExpenses) {
+    const mk = monthKey(me.data);
+    const v = Number(me.valor) || 0;
+    if (v <= 0) continue;
+    monthlyTotals[mk] = (monthlyTotals[mk] || 0) + v;
+    const cat = (me.categoria || "outros").toLowerCase();
+    if (!monthlyCatTotals[mk]) monthlyCatTotals[mk] = {};
+    monthlyCatTotals[mk][cat] = (monthlyCatTotals[mk][cat] || 0) + v;
   }
 
   const allMonths = Object.keys(monthlyTotals).sort();
