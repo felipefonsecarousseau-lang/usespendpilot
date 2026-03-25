@@ -64,7 +64,7 @@ const SupermarketView = ({ enrichedItems, period }: Props) => {
     if (selectedProduct === "all") return null;
 
     const items = normalizedItems.filter(
-      (i) => i.norm.baseName.toLowerCase() === selectedProduct
+      (i) => i.norm.baseNameClean === selectedProduct
     );
     if (items.length === 0) return null;
 
