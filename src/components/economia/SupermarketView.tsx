@@ -215,7 +215,7 @@ const SupermarketView = ({ enrichedItems, period }: Props) => {
           <SelectContent>
             <SelectItem value="all">Visão geral (todos os produtos)</SelectItem>
             {productGroups.map((p) => (
-              <SelectItem key={p.baseName.toLowerCase()} value={p.baseName.toLowerCase()}>
+              <SelectItem key={p.baseNameClean} value={p.baseNameClean}>
                 {p.baseName} ({p.count})
               </SelectItem>
             ))}
