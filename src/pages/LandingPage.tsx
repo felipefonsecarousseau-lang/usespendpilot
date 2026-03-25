@@ -307,7 +307,7 @@ const LandingPage = () => {
             variants={fadeUp}
             className="text-3xl md:text-4xl font-bold text-foreground"
           >
-            ⚡ Registre qualquer gasto em segundos
+            ⚡ Registre qualquer gasto em segundos e mantenha o controle
           </motion.h2>
           <motion.p
             variants={fadeUp}
