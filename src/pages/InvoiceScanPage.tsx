@@ -9,6 +9,10 @@ import SavedReceiptsList from "@/components/SavedReceiptsList";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 
+import { normalizeProduct } from "@/lib/product-normalizer";
+
+const UNIDADES = ["un", "kg", "g", "L", "mL", "pct", "cx", "dz"];
+
 interface ParsedItem {
   nome_produto: string;
   nome_normalizado: string;
@@ -16,6 +20,8 @@ interface ParsedItem {
   preco_unitario: number;
   quantidade: number;
   categoria: string;
+  peso_quantidade: number | null;
+  unidade: string | null;
 }
 
 interface ReceiptStoreData {
