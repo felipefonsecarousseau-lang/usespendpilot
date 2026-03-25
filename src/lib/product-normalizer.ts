@@ -2,10 +2,36 @@
 // Extracts base name, quantity, unit, and pricePerUnit from product names.
 
 export interface NormalizedProduct {
-  baseName: string;       // e.g. "Arroz"
-  quantity: number | null; // e.g. 5
-  unit: string | null;     // e.g. "kg"
+  baseName: string;            // e.g. "Arroz" (display-friendly)
+  baseNameClean: string;       // e.g. "arroz" (accent-free, lowercase, for grouping)
+  quantity: number | null;     // e.g. 5
+  unit: string | null;         // e.g. "kg"
   pricePerUnit: number | null; // e.g. R$/kg
+}
+
+/**
+ * Remove diacritics/accents from a string.
+ * "Café" → "Cafe", "Açúcar" → "Acucar"
+ */
+function removeAccents(str: string): string {
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+/**
+ * Produce a clean key for comparison: no accents, lowercase,
+ * no special chars, collapsed whitespace, no noise words.
+ */
+function cleanForComparison(baseName: string): string {
+  let clean = removeAccents(baseName).toLowerCase();
+  // Remove special characters except spaces
+  clean = clean.replace(/[^a-z0-9\s]/g, " ");
+  // Remove noise words (already stripped in extractBaseName, but ensure)
+  clean = clean.replace(/\b(tipo|tp|t\.|marca|extra|especial|premium|integral|tradicional|branco|branca|light|zero|diet)\b/g, "");
+  // Collapse whitespace
+  clean = clean.replace(/\s{2,}/g, " ").trim();
+  // Basic plural → singular (Portuguese simple rules)
+  clean = clean.replace(/\b(\w{3,})s\b/g, "$1");
+  return clean;
 }
 
 // Unit aliases → canonical form
