@@ -114,16 +114,15 @@ export function normalizeProduct(
 ): NormalizedProduct {
   const { quantity: parsedQty, unit: parsedUnit } = parseQuantityUnit(rawName);
   const baseName = extractBaseName(rawName);
+  const baseNameClean = cleanForComparison(baseName);
 
   // Calculate pricePerUnit if we have enough info
   let pricePerUnit: number | null = null;
 
   if (parsedQty && parsedQty > 0 && itemPriceTotal > 0) {
-    // Convert to base unit for consistent comparison
     let effectiveQty = parsedQty;
     let effectiveUnit = parsedUnit;
 
-    // Normalize g → kg, mL → L for pricePerUnit
     if (parsedUnit === "g" && parsedQty >= 1) {
       effectiveQty = parsedQty / 1000;
       effectiveUnit = "kg";
@@ -132,14 +131,13 @@ export function normalizeProduct(
       effectiveUnit = "L";
     }
 
-    // Price per base unit (per item, not per receipt line)
     const pricePerItem = itemPriceTotal / itemQuantity;
     pricePerUnit = Math.round((pricePerItem / effectiveQty) * 100) / 100;
 
-    return { baseName, quantity: parsedQty, unit: effectiveUnit, pricePerUnit };
+    return { baseName, baseNameClean, quantity: parsedQty, unit: effectiveUnit, pricePerUnit };
   }
 
-  return { baseName, quantity: parsedQty, unit: parsedUnit, pricePerUnit };
+  return { baseName, baseNameClean, quantity: parsedQty, unit: parsedUnit, pricePerUnit };
 }
 
 /**
