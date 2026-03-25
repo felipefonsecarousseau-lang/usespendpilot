@@ -264,17 +264,19 @@ const GastosDetalhadosPage = () => {
         subMap.set(key, (subMap.get(key) || 0) + Number(item.preco_total));
       });
 
-    // Fixed expenses matching category
-    fixedExpenses
-      .filter((exp: any) => (exp.categoria || "Outros").toLowerCase() === selectedCategory)
-      .forEach((exp: any) => {
+    // Fixed expense occurrences matching category
+    fixedOccurrences
+      .filter((occ: any) => ((occ.fixed_expenses as any)?.categoria || "Outros").toLowerCase() === selectedCategory)
+      .forEach((occ: any) => {
+        const fe = occ.fixed_expenses as any;
         items.push({
-          nome: exp.nome,
-          valor: Number(exp.valor),
-          data: null,
+          nome: fe?.nome || "Conta fixa",
+          valor: Number(occ.valor),
+          data: occ.mes,
           estabelecimento: "Conta fixa",
         });
-        subMap.set(exp.nome, (subMap.get(exp.nome) || 0) + Number(exp.valor));
+        const key = fe?.nome || "Conta fixa";
+        subMap.set(key, (subMap.get(key) || 0) + Number(occ.valor));
       });
 
     // Manual expenses matching category
