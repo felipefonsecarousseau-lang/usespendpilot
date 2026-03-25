@@ -58,6 +58,20 @@ const GoalDetailPage = () => {
     setGoal({ ...goal, valor_guardado: newVal });
   };
 
+  const updateSavedAmount = async () => {
+    if (!goal) return;
+    const newVal = parseFloat(editSavedValue.replace(",", "."));
+    if (isNaN(newVal) || newVal < 0) { toast.error("Valor inválido."); return; }
+    const { error } = await supabase
+      .from("goals")
+      .update({ valor_guardado: newVal } as any)
+      .eq("id", goal.id);
+    if (error) { toast.error("Erro ao atualizar."); return; }
+    toast.success("Valor atualizado!");
+    setGoal({ ...goal, valor_guardado: newVal });
+    setEditingSaved(false);
+  };
+
   const formatCurrency = (val: number) => {
     const [intPart, decPart] = val.toFixed(2).split(".");
     return <span>R$ {intPart}<span className="opacity-50">,{decPart}</span></span>;
