@@ -46,14 +46,14 @@ const SupermarketView = ({ enrichedItems, period }: Props) => {
 
   // Group products by normalized base name for the selector
   const productGroups = useMemo(() => {
-    const map = new Map<string, { baseName: string; count: number }>();
+    const map = new Map<string, { baseName: string; baseNameClean: string; count: number }>();
     normalizedItems.forEach((item) => {
-      const key = item.norm.baseName.toLowerCase();
+      const key = item.norm.baseNameClean;
       const existing = map.get(key);
       if (existing) {
         existing.count++;
       } else {
-        map.set(key, { baseName: item.norm.baseName, count: 1 });
+        map.set(key, { baseName: item.norm.baseName, baseNameClean: key, count: 1 });
       }
     });
     return [...map.values()].sort((a, b) => a.baseName.localeCompare(b.baseName));
