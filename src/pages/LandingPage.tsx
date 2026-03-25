@@ -270,7 +270,7 @@ const LandingPage = () => {
             variants={fadeUp}
             className="text-3xl md:text-4xl font-bold text-foreground"
           >
-            💡 Sugestões reais de economia
+            💡 Sugestões reais para economizar no supermercado
           </motion.h2>
           <motion.p
             variants={fadeUp}
