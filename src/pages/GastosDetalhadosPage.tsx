@@ -301,7 +301,7 @@ const GastosDetalhadosPage = () => {
     items.sort((a, b) => b.valor - a.valor);
 
     return { items, subChart };
-  }, [selectedCategory, receiptItems, fixedExpenses, manualExpenses]);
+  }, [selectedCategory, receiptItems, fixedOccurrences, manualExpenses]);
 
   const isLoading = loadingReceipts || loadingFixed || loadingManual;
   const isEmpty = categoryData.length === 0 && !isLoading;
