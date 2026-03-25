@@ -237,7 +237,7 @@ const LandingPage = () => {
             variants={fadeUp}
             className="text-3xl md:text-4xl font-bold text-foreground"
           >
-            📸 Escaneie notas e automatize tudo
+            📸 Escaneie notas fiscais e automatize seu controle de gastos
           </motion.h2>
           <motion.p
             variants={fadeUp}
