@@ -53,6 +53,23 @@ async function fetchPlanData(): Promise<FullPlanData> {
     }
   }
 
+  // Check for manually granted premium (non-trial, non-Stripe)
+  if (plan?.plan_type === "premium" && plan.status === "active" && !plan.is_trial) {
+    const expiresAt = plan.expires_at ? new Date(plan.expires_at) : null;
+    if (!expiresAt || now < expiresAt) {
+      return {
+        isPremium: true,
+        isTrial: false,
+        trialDaysLeft: null,
+        planType: "premium",
+        status: "active",
+        subscriptionEnd: plan.expires_at,
+        trialExpiresAt: plan.trial_expires_at ?? null,
+        startedAt: plan.started_at,
+      };
+    }
+  }
+
   // Check Stripe subscription
   try {
     const { data, error } = await supabase.functions.invoke<SubscriptionData>("check-subscription");
