@@ -413,6 +413,11 @@ const InvoiceScanPage = () => {
                               {item.quantidade}× {formatCurrency(item.preco_unitario)}
                             </span>
                           )}
+                          {item.peso_quantidade && item.unidade && (
+                            <span className="text-xs text-muted-foreground">
+                              {item.peso_quantidade}{item.unidade}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
