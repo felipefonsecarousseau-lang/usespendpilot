@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { ShoppingCart, TrendingDown, Award, PiggyBank, Search } from "lucide-react";
+import { ShoppingCart, TrendingDown, Award, PiggyBank, Search, Scale } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { generateInsights } from "@/lib/insights-engine";
+import { normalizeProduct, formatPricePerUnit, type NormalizedProduct } from "@/lib/product-normalizer";
 
 const formatCurrency = (val: number) => (
   <span className="currency-display">R$ {val.toFixed(2).replace(".", ",")}</span>
@@ -23,6 +24,10 @@ interface EnrichedItem {
   data_compra?: string;
 }
 
+interface NormalizedEnrichedItem extends EnrichedItem {
+  norm: NormalizedProduct;
+}
+
 interface Props {
   enrichedItems: EnrichedItem[];
   period: string;
@@ -31,25 +36,58 @@ interface Props {
 const SupermarketView = ({ enrichedItems, period }: Props) => {
   const [selectedProduct, setSelectedProduct] = useState<string>("all");
 
-  // Unique products
-  const products = useMemo(() => {
-    const set = new Set<string>();
-    enrichedItems.forEach((i) => set.add(i.nome_normalizado));
-    return [...set].sort();
+  // Normalize all items
+  const normalizedItems = useMemo<NormalizedEnrichedItem[]>(() => {
+    return enrichedItems.map((item) => ({
+      ...item,
+      norm: normalizeProduct(item.nome_normalizado, item.quantidade, item.preco_total),
+    }));
   }, [enrichedItems]);
 
-  // Product-level deep analysis
+  // Group products by normalized base name for the selector
+  const productGroups = useMemo(() => {
+    const map = new Map<string, { baseName: string; count: number }>();
+    normalizedItems.forEach((item) => {
+      const key = item.norm.baseName.toLowerCase();
+      const existing = map.get(key);
+      if (existing) {
+        existing.count++;
+      } else {
+        map.set(key, { baseName: item.norm.baseName, count: 1 });
+      }
+    });
+    return [...map.values()].sort((a, b) => a.baseName.localeCompare(b.baseName));
+  }, [normalizedItems]);
+
+  // Product-level deep analysis using normalized data
   const productAnalysis = useMemo(() => {
     if (selectedProduct === "all") return null;
-    const items = enrichedItems.filter((i) => i.nome_normalizado === selectedProduct);
+
+    const items = normalizedItems.filter(
+      (i) => i.norm.baseName.toLowerCase() === selectedProduct
+    );
     if (items.length === 0) return null;
 
+    // Check if we have unit pricing available
+    const hasUnitPricing = items.some((i) => i.norm.pricePerUnit !== null);
+    const commonUnit = items.find((i) => i.norm.unit)?.norm.unit || null;
+
     // Group by store
-    const storeMap = new Map<string, { prices: number[]; unitPrices: number[]; quantities: number[]; nome: string }>();
+    const storeMap = new Map<string, {
+      prices: number[];
+      unitPrices: number[];
+      normalizedPrices: (number | null)[];
+      quantities: number[];
+      nome: string;
+    }>();
+
     for (const item of items) {
-      const e = storeMap.get(item.store_id) || { prices: [], unitPrices: [], quantities: [], nome: item.store_nome };
+      const e = storeMap.get(item.store_id) || {
+        prices: [], unitPrices: [], normalizedPrices: [], quantities: [], nome: item.store_nome,
+      };
       e.prices.push(item.preco_total);
       e.unitPrices.push(item.preco_unitario);
+      e.normalizedPrices.push(item.norm.pricePerUnit);
       e.quantities.push(item.quantidade);
       storeMap.set(item.store_id, e);
     }
@@ -60,8 +98,24 @@ const SupermarketView = ({ enrichedItems, period }: Props) => {
       const avgQty = v.quantities.reduce((s, q) => s + q, 0) / v.quantities.length;
       const minUnit = Math.min(...v.unitPrices);
       const maxUnit = Math.max(...v.unitPrices);
-      return { id, nome: v.nome, avgUnit, avgTotal, avgQty, minUnit, maxUnit, compras: v.prices.length };
-    }).sort((a, b) => a.avgUnit - b.avgUnit);
+
+      // Normalized price per unit (e.g. R$/kg)
+      const validNorm = v.normalizedPrices.filter((p): p is number => p !== null);
+      const avgNormPrice = validNorm.length > 0
+        ? validNorm.reduce((s, p) => s + p, 0) / validNorm.length
+        : null;
+
+      return {
+        id, nome: v.nome, avgUnit, avgTotal, avgQty, minUnit, maxUnit,
+        compras: v.prices.length, avgNormPrice,
+      };
+    }).sort((a, b) => {
+      // Sort by normalized price if available, else by unit price
+      if (a.avgNormPrice !== null && b.avgNormPrice !== null) {
+        return a.avgNormPrice - b.avgNormPrice;
+      }
+      return a.avgUnit - b.avgUnit;
+    });
 
     // Price history (chronological)
     const history = items
@@ -70,17 +124,32 @@ const SupermarketView = ({ enrichedItems, period }: Props) => {
       .map((i) => ({
         data: i.data_compra || "",
         preco: i.preco_unitario,
+        normPreco: i.norm.pricePerUnit,
         loja: i.store_nome,
         quantidade: i.quantidade,
+        peso: i.norm.quantity,
+        unidade: i.norm.unit,
       }));
 
-    const allUnitPrices = items.map((i) => i.preco_unitario);
     const cheapest = stores[0];
     const mostExpensive = stores[stores.length - 1];
-    const savings = stores.length > 1 ? mostExpensive.avgUnit - cheapest.avgUnit : 0;
 
-    return { stores, history, savings, cheapest, mostExpensive, totalCompras: items.length, avgPrice: allUnitPrices.reduce((s, p) => s + p, 0) / allUnitPrices.length };
-  }, [enrichedItems, selectedProduct]);
+    // Calculate savings using normalized prices when available
+    let savings = 0;
+    if (stores.length > 1) {
+      if (cheapest.avgNormPrice !== null && mostExpensive.avgNormPrice !== null) {
+        savings = mostExpensive.avgNormPrice - cheapest.avgNormPrice;
+      } else {
+        savings = mostExpensive.avgUnit - cheapest.avgUnit;
+      }
+    }
+
+    return {
+      stores, history, savings, cheapest, mostExpensive,
+      totalCompras: items.length,
+      hasUnitPricing, commonUnit,
+    };
+  }, [normalizedItems, selectedProduct]);
 
   // General insights (when no product selected)
   const insights = useMemo(() => {
@@ -104,10 +173,12 @@ const SupermarketView = ({ enrichedItems, period }: Props) => {
 
   // Potential savings
   const potentialSavings = useMemo(() => {
+    // Use normalized base names for grouping
     const prodStoreBuild = new Map<string, Map<string, { totalPrice: number; count: number }>>();
-    enrichedItems.forEach((item) => {
-      if (!prodStoreBuild.has(item.nome_normalizado)) prodStoreBuild.set(item.nome_normalizado, new Map());
-      const sm = prodStoreBuild.get(item.nome_normalizado)!;
+    normalizedItems.forEach((item) => {
+      const key = item.norm.baseName.toLowerCase();
+      if (!prodStoreBuild.has(key)) prodStoreBuild.set(key, new Map());
+      const sm = prodStoreBuild.get(key)!;
       const e = sm.get(item.store_id) || { totalPrice: 0, count: 0 };
       e.totalPrice += item.preco_total;
       e.count += 1;
@@ -125,7 +196,7 @@ const SupermarketView = ({ enrichedItems, period }: Props) => {
     });
 
     return total;
-  }, [enrichedItems]);
+  }, [normalizedItems]);
 
   return (
     <div className="space-y-6">
@@ -143,8 +214,10 @@ const SupermarketView = ({ enrichedItems, period }: Props) => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Visão geral (todos os produtos)</SelectItem>
-            {products.map((p) => (
-              <SelectItem key={p} value={p}>{p}</SelectItem>
+            {productGroups.map((p) => (
+              <SelectItem key={p.baseName.toLowerCase()} value={p.baseName.toLowerCase()}>
+                {p.baseName} ({p.count})
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -153,6 +226,16 @@ const SupermarketView = ({ enrichedItems, period }: Props) => {
       {/* Product deep analysis */}
       {productAnalysis && (
         <div className="space-y-4">
+          {/* Unit pricing badge */}
+          {productAnalysis.hasUnitPricing && productAnalysis.commonUnit && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
+              <Badge variant="secondary" className="gap-1">
+                <Scale className="h-3 w-3" />
+                Comparação por {productAnalysis.commonUnit}
+              </Badge>
+            </motion.div>
+          )}
+
           {/* Store comparison */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-5">
             <div className="flex items-center gap-3 mb-4">
@@ -160,7 +243,9 @@ const SupermarketView = ({ enrichedItems, period }: Props) => {
                 <Award className="h-4 w-4 text-accent" />
               </div>
               <div>
-                <h2 className="text-base font-semibold">{selectedProduct}</h2>
+                <h2 className="text-base font-semibold">
+                  {productGroups.find((p) => p.baseName.toLowerCase() === selectedProduct)?.baseName || selectedProduct}
+                </h2>
                 <p className="text-xs text-muted-foreground">{productAnalysis.totalCompras} compras analisadas</p>
               </div>
             </div>
@@ -170,7 +255,10 @@ const SupermarketView = ({ enrichedItems, period }: Props) => {
                 <PiggyBank className="h-5 w-5 text-primary shrink-0" />
                 <div>
                   <p className="text-sm font-medium text-foreground">
-                    Economia de {fmtStr(productAnalysis.savings)} por unidade
+                    Economia de {productAnalysis.hasUnitPricing && productAnalysis.commonUnit
+                      ? formatPricePerUnit(productAnalysis.savings, productAnalysis.commonUnit)
+                      : fmtStr(productAnalysis.savings) + " por unidade"
+                    }
                   </p>
                   <p className="text-xs text-muted-foreground">
                     Comprando no <span className="text-primary font-medium">{productAnalysis.cheapest?.nome}</span> em vez do {productAnalysis.mostExpensive?.nome}
@@ -192,10 +280,21 @@ const SupermarketView = ({ enrichedItems, period }: Props) => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-mono">{formatCurrency(s.avgUnit)}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {s.minUnit !== s.maxUnit ? `${fmtStr(s.minUnit)} – ${fmtStr(s.maxUnit)}` : "preço estável"}
-                    </p>
+                    {s.avgNormPrice !== null && productAnalysis.commonUnit ? (
+                      <>
+                        <p className="text-sm font-mono text-primary">
+                          {formatPricePerUnit(s.avgNormPrice, productAnalysis.commonUnit)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{formatCurrency(s.avgUnit)} unit.</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm font-mono">{formatCurrency(s.avgUnit)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {s.minUnit !== s.maxUnit ? `${fmtStr(s.minUnit)} – ${fmtStr(s.maxUnit)}` : "preço estável"}
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
@@ -214,8 +313,19 @@ const SupermarketView = ({ enrichedItems, period }: Props) => {
                         {new Date(h.data + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
                       </span>
                       <span className="text-xs text-muted-foreground">{h.loja}</span>
+                      {h.peso && h.unidade && (
+                        <span className="text-xs text-muted-foreground/70">{h.peso}{h.unidade}</span>
+                      )}
                     </div>
-                    <span className="font-mono text-sm">{formatCurrency(h.preco)}</span>
+                    <div className="text-right">
+                      {h.normPreco !== null && productAnalysis.commonUnit ? (
+                        <span className="font-mono text-sm text-primary">
+                          {formatPricePerUnit(h.normPreco, productAnalysis.commonUnit)}
+                        </span>
+                      ) : (
+                        <span className="font-mono text-sm">{formatCurrency(h.preco)}</span>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

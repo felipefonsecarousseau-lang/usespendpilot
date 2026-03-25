@@ -9,6 +9,10 @@ import SavedReceiptsList from "@/components/SavedReceiptsList";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 
+import { normalizeProduct } from "@/lib/product-normalizer";
+
+const UNIDADES = ["un", "kg", "g", "L", "mL", "pct", "cx", "dz"];
+
 interface ParsedItem {
   nome_produto: string;
   nome_normalizado: string;
@@ -16,6 +20,8 @@ interface ParsedItem {
   preco_unitario: number;
   quantidade: number;
   categoria: string;
+  peso_quantidade: number | null;
+  unidade: string | null;
 }
 
 interface ReceiptStoreData {
@@ -115,14 +121,23 @@ const InvoiceScanPage = () => {
         setWarnings(data.warnings || []);
 
         setItems(
-          receipt.items.map((item: any) => ({
-            nome_produto: item.nome_produto,
-            nome_normalizado: item.nome_normalizado,
-            valor: item.preco_total,
-            preco_unitario: item.preco_unitario,
-            quantidade: item.quantidade,
-            categoria: item.categoria,
-          }))
+          receipt.items.map((item: any) => {
+            const norm = normalizeProduct(
+              item.nome_normalizado || item.nome_produto,
+              item.quantidade || 1,
+              item.preco_total || 0
+            );
+            return {
+              nome_produto: item.nome_produto,
+              nome_normalizado: item.nome_normalizado,
+              valor: item.preco_total,
+              preco_unitario: item.preco_unitario,
+              quantidade: item.quantidade,
+              categoria: item.categoria,
+              peso_quantidade: norm.quantity,
+              unidade: norm.unit,
+            };
+          })
         );
 
         if (data.warnings?.length > 0) {
@@ -343,6 +358,33 @@ const InvoiceScanPage = () => {
                           step={0.01}
                         />
                       </div>
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          <label className="text-[10px] text-muted-foreground">Peso/Volume</label>
+                          <Input
+                            type="number"
+                            value={item.peso_quantidade ?? ""}
+                            onChange={(e) => updateItem(i, "peso_quantidade", e.target.value ? Number(e.target.value) : null)}
+                            placeholder="Ex: 5"
+                            className="text-sm"
+                            min={0}
+                            step={0.01}
+                          />
+                        </div>
+                        <div className="w-24">
+                          <label className="text-[10px] text-muted-foreground">Unidade</label>
+                          <select
+                            value={item.unidade || ""}
+                            onChange={(e) => updateItem(i, "unidade", e.target.value || null)}
+                            className="w-full h-10 rounded-md border border-input bg-background px-2 text-sm"
+                          >
+                            <option value="">—</option>
+                            {UNIDADES.map((u) => (
+                              <option key={u} value={u}>{u}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
                       <div className="flex items-center gap-2">
                         <select
                           value={item.categoria}
@@ -369,6 +411,11 @@ const InvoiceScanPage = () => {
                           {item.quantidade > 1 && (
                             <span className="text-xs text-muted-foreground">
                               {item.quantidade}× {formatCurrency(item.preco_unitario)}
+                            </span>
+                          )}
+                          {item.peso_quantidade && item.unidade && (
+                            <span className="text-xs text-muted-foreground">
+                              {item.peso_quantidade}{item.unidade}
                             </span>
                           )}
                         </div>
