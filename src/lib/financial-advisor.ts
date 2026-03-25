@@ -28,6 +28,12 @@ interface StoreReceiptRow extends ReceiptRow {
   stores?: { nome: string } | null;
 }
 
+interface ManualExpenseRow {
+  valor: number;
+  data: string;
+  categoria: string;
+}
+
 const CAT_LABELS: Record<string, string> = {
   mercado: "Supermercado",
   higiene: "Higiene",
@@ -35,6 +41,9 @@ const CAT_LABELS: Record<string, string> = {
   bebidas: "Bebidas",
   padaria: "Padaria",
   hortifruti: "Hortifruti",
+  transporte: "Transporte",
+  lazer: "Lazer",
+  streaming: "Streaming",
   outros: "Outros",
 };
 
@@ -48,20 +57,22 @@ function monthKey(date: string) {
 
 /**
  * Generate up to 5 personalized financial recommendations.
+ * Now includes manual expenses in all calculations.
  */
 export function generateRecommendations(
   receipts: StoreReceiptRow[],
   rendaMensal: number,
-  fixedExpensesTotal = 0
+  fixedExpensesTotal = 0,
+  manualExpenses: ManualExpenseRow[] = []
 ): Recommendation[] {
-  if (receipts.length === 0) return [];
+  if (receipts.length === 0 && manualExpenses.length === 0) return [];
 
   const now = new Date();
   const currentMonth = monthKey(now.toISOString());
   const today = now.getDate();
   const totalDays = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
 
-  // Build historical category averages (past months only)
+  // Build historical category averages (past months only) from ALL sources
   const catMonth: Record<string, Record<string, number>> = {};
   const monthSet = new Set<string>();
 
@@ -73,6 +84,17 @@ export function generateRecommendations(
       if (!catMonth[cat]) catMonth[cat] = {};
       catMonth[cat][mk] = (catMonth[cat][mk] || 0) + item.preco_total;
     }
+  }
+
+  // Include manual expenses in category aggregation
+  for (const me of manualExpenses) {
+    const mk = monthKey(me.data);
+    monthSet.add(mk);
+    const cat = (me.categoria || "outros").toLowerCase();
+    const v = Number(me.valor) || 0;
+    if (v <= 0) continue;
+    if (!catMonth[cat]) catMonth[cat] = {};
+    catMonth[cat][mk] = (catMonth[cat][mk] || 0) + v;
   }
 
   const pastMonths = [...monthSet].filter((m) => m !== currentMonth).sort();
@@ -156,7 +178,7 @@ export function generateRecommendations(
     });
   }
 
-  // ── 3) Tendência de aumento de gastos (últimos 30 dias) ──
+  // ── 3) Tendência de aumento de gastos (últimos 30 dias vs 30 anteriores) ──
   const thirtyDaysAgo = new Date(now);
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   const sixtyDaysAgo = new Date(now);
@@ -168,6 +190,7 @@ export function generateRecommendations(
   const catRecent: Record<string, number> = {};
   const catPrior: Record<string, number> = {};
 
+  // Receipts
   for (const r of receipts) {
     for (const item of r.receipt_items ?? []) {
       const cat = item.categoria || "outros";
@@ -176,6 +199,18 @@ export function generateRecommendations(
       } else if (r.data_compra >= sixtyStr && r.data_compra < thirtyStr) {
         catPrior[cat] = (catPrior[cat] || 0) + item.preco_total;
       }
+    }
+  }
+
+  // Manual expenses in trend detection
+  for (const me of manualExpenses) {
+    const cat = (me.categoria || "outros").toLowerCase();
+    const v = Number(me.valor) || 0;
+    if (v <= 0) continue;
+    if (me.data >= thirtyStr && me.data <= todayStr) {
+      catRecent[cat] = (catRecent[cat] || 0) + v;
+    } else if (me.data >= sixtyStr && me.data < thirtyStr) {
+      catPrior[cat] = (catPrior[cat] || 0) + v;
     }
   }
 
@@ -197,7 +232,7 @@ export function generateRecommendations(
 
   // ── 4) Sugestão de melhoria do score ──
   if (rendaMensal > 0) {
-    const score = calculateFinancialScore(receipts as any, rendaMensal, fixedExpensesTotal);
+    const score = calculateFinancialScore(receipts as any, rendaMensal, fixedExpensesTotal, manualExpenses);
     if (score.score < 80 && score.score > 0) {
       // Find weakest pillar
       const { detalhes } = score;

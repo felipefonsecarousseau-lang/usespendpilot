@@ -30,6 +30,12 @@ interface ReceiptRow {
   receipt_items: { categoria: string; preco_total: number }[];
 }
 
+interface ManualExpenseRow {
+  valor: number;
+  data: string;
+  categoria: string;
+}
+
 function monthKey(date: string) {
   return date.slice(0, 7); // "YYYY-MM"
 }
@@ -43,16 +49,18 @@ function fmt(val: number) {
 }
 
 /**
- * Generate financial forecasts from receipt history.
+ * Generate financial forecasts from receipt history + manual expenses + fixed expenses.
  * @param receipts - Array of receipt rows with nested items
  * @param rendaMensal - Monthly household income
  * @param fixedExpensesTotal - Total fixed expenses for the current month (from fixed_expense_occurrences)
+ * @param manualExpenses - Manual expense entries
  * @param monthsBack - How many months of history to consider (default 6)
  */
 export function generateForecast(
   receipts: ReceiptRow[],
   rendaMensal: number,
   fixedExpensesTotal = 0,
+  manualExpenses: ManualExpenseRow[] = [],
   monthsBack = 6
 ): FinancialForecast {
   const now = new Date();
@@ -69,6 +77,7 @@ export function generateForecast(
 
   // Filter to relevant window
   const relevant = receipts.filter((r) => r.data_compra >= cutoffStr);
+  const relevantManual = manualExpenses.filter((m) => m.data >= cutoffStr);
 
   // ── 1) Aggregate by category × month ──
   const catMonth: Record<string, Record<string, number>> = {};
@@ -82,6 +91,15 @@ export function generateForecast(
       if (!catMonth[cat]) catMonth[cat] = {};
       catMonth[cat][mk] = (catMonth[cat][mk] || 0) + item.preco_total;
     }
+  }
+
+  // Include manual expenses in category aggregation
+  for (const me of relevantManual) {
+    const mk = monthKey(me.data);
+    monthSet.add(mk);
+    const cat = (me.categoria || "outros").toLowerCase();
+    if (!catMonth[cat]) catMonth[cat] = {};
+    catMonth[cat][mk] = (catMonth[cat][mk] || 0) + (Number(me.valor) || 0);
   }
 
   // Sorted months excluding current
@@ -116,28 +134,39 @@ export function generateForecast(
 
   previsao_por_categoria.sort((a, b) => b.valor_previsto - a.valor_previsto);
 
-  // ── 3) Current month spending & projection ──
+  // ── 3) Current month spending & projection (receipts + manual) ──
   const currentReceipts = receipts.filter(
     (r) => monthKey(r.data_compra) === currentMonth
   );
-  let gastoAtualMes = currentReceipts.reduce(
+  let gastoReceiptsMes = currentReceipts.reduce(
     (s, r) => s + r.valor_total,
     0
   );
 
+  const currentManual = manualExpenses.filter(
+    (m) => monthKey(m.data) === currentMonth
+  );
+  let gastoManualMes = currentManual.reduce(
+    (s, m) => s + (Number(m.valor) || 0),
+    0
+  );
+
+  let gastoAtualMes = gastoReceiptsMes + gastoManualMes;
+
   // If no current month data, use the most recent month that has data
   let mesFallback: string | null = null;
-  if (gastoAtualMes === 0 && relevant.length > 0) {
+  if (gastoAtualMes === 0 && (relevant.length > 0 || relevantManual.length > 0)) {
     const sortedMonths = [...monthSet].sort().reverse();
     if (sortedMonths.length > 0) {
       mesFallback = sortedMonths[0];
       const fallbackReceipts = receipts.filter(
         (r) => monthKey(r.data_compra) === mesFallback
       );
-      gastoAtualMes = fallbackReceipts.reduce(
-        (s, r) => s + r.valor_total,
-        0
+      const fallbackManual = manualExpenses.filter(
+        (m) => monthKey(m.data) === mesFallback
       );
+      gastoAtualMes = fallbackReceipts.reduce((s, r) => s + r.valor_total, 0) +
+        fallbackManual.reduce((s, m) => s + (Number(m.valor) || 0), 0);
     }
   }
 

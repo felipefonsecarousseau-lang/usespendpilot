@@ -140,6 +140,19 @@ const DashboardPage = () => {
     },
   });
 
+  // Fetch ALL manual expenses for forecast/score/advisor (needs historical data)
+  const { data: allManualExpenses = [] } = useQuery({
+    queryKey: ["dashboard-all-manual-expenses"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("manual_expenses")
+        .select("valor, categoria, nome, data")
+        .order("data", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   // Fetch family income
   const { data: familyMembers = [] } = useQuery({
     queryKey: ["dashboard-family"],
@@ -200,18 +213,18 @@ const DashboardPage = () => {
   const hasData = totalGasto > 0;
 
   const forecast = useMemo(
-    () => generateForecast(allReceipts as any, rendaMensal, fixedTotals.total),
-    [allReceipts, rendaMensal, fixedTotals.total]
+    () => generateForecast(allReceipts as any, rendaMensal, fixedTotals.total, allManualExpenses as any),
+    [allReceipts, rendaMensal, fixedTotals.total, allManualExpenses]
   );
 
   const financialScore = useMemo(
-    () => calculateFinancialScore(allReceipts as any, rendaMensal, fixedTotals.total),
-    [allReceipts, rendaMensal, fixedTotals.total]
+    () => calculateFinancialScore(allReceipts as any, rendaMensal, fixedTotals.total, allManualExpenses as any),
+    [allReceipts, rendaMensal, fixedTotals.total, allManualExpenses]
   );
 
   const recommendations = useMemo(
-    () => generateRecommendations(allReceipts as any, rendaMensal, fixedTotals.total),
-    [allReceipts, rendaMensal, fixedTotals.total]
+    () => generateRecommendations(allReceipts as any, rendaMensal, fixedTotals.total, allManualExpenses as any),
+    [allReceipts, rendaMensal, fixedTotals.total, allManualExpenses]
   );
 
   // Build alerts from forecast
