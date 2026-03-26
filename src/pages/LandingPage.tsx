@@ -120,6 +120,11 @@ const LandingPage = () => {
           </motion.div>
         </Section>
 
+        {/* Novas seções visuais */}
+        <EconomiaRealtimeSection />
+        <GastosOrganizadosSection />
+        <InsightsSection />
+
         {/* Economize */}
         <Section>
           <motion.h2
