@@ -1,6 +1,9 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import EconomiaRealtimeSection from "@/components/landing/EconomiaRealtimeSection";
+import GastosOrganizadosSection from "@/components/landing/GastosOrganizadosSection";
+import InsightsSection from "@/components/landing/InsightsSection";
 import {
   Camera,
   Brain,
@@ -116,6 +119,11 @@ const LandingPage = () => {
             <CTAButton />
           </motion.div>
         </Section>
+
+        {/* Novas seções visuais */}
+        <EconomiaRealtimeSection />
+        <GastosOrganizadosSection />
+        <InsightsSection />
 
         {/* Economize */}
         <Section>
