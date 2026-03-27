@@ -4,15 +4,15 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell,
 } from "recharts";
 import { useQuery } from "@tanstack/react-query";
-import { format, subMonths, startOfMonth } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  TrendingUp, TrendingDown, BarChart3, CalendarRange, Target, Lightbulb, ArrowUpRight, ArrowDownRight,
+  TrendingUp, TrendingDown, BarChart3, CalendarRange, Target, Lightbulb,
+  ArrowUpRight, ArrowDownRight, Wallet, AlertTriangle, Banknote, PiggyBank, ShieldAlert,
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 const MONTH_LABELS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
@@ -24,7 +24,11 @@ const ChartTooltipContent = ({ active, payload, label }: any) => {
   return (
     <div className="glass-card p-3 text-sm">
       <p className="font-medium text-foreground">{label}</p>
-      <p className="text-muted-foreground">{fmt(payload[0].value)}</p>
+      {payload.map((p: any, i: number) => (
+        <p key={i} className="text-muted-foreground">
+          {p.name === "renda" ? "Renda" : p.name === "total" ? "Gastos" : p.name}: {fmt(p.value)}
+        </p>
+      ))}
     </div>
   );
 };
@@ -94,6 +98,25 @@ const VisaoFinanceiraPage = () => {
     },
   });
 
+  // ─── Fetch family income ───
+  const { data: familyMembers = [] } = useQuery({
+    queryKey: ["visao-family-income"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      const { data } = await supabase
+        .from("family_members")
+        .select("renda_mensal, nome, papel")
+        .eq("user_id", user.id);
+      return data || [];
+    },
+  });
+
+  const rendaMensal = useMemo(
+    () => familyMembers.reduce((s, m) => s + Number(m.renda_mensal), 0),
+    [familyMembers],
+  );
+
   // ─── Previous year data for comparison ───
   const { data: prevReceiptItems = [] } = useQuery({
     queryKey: ["visao-receipts-prev", selectedYear],
@@ -145,7 +168,6 @@ const VisaoFinanceiraPage = () => {
     const months: Record<number, { total: number; cats: Record<string, number> }> = {};
     for (let m = 0; m < 12; m++) months[m] = { total: 0, cats: {} };
 
-    // Receipt items
     for (const item of receiptItems as any[]) {
       const date = item.receipts?.data_compra;
       if (!date) continue;
@@ -157,7 +179,6 @@ const VisaoFinanceiraPage = () => {
       months[m].cats[cat] = (months[m].cats[cat] || 0) + v;
     }
 
-    // Manual expenses
     for (const me of manualExpenses as any[]) {
       const m = new Date(me.data + "T00:00:00").getMonth();
       const v = Number(me.valor) || 0;
@@ -167,7 +188,6 @@ const VisaoFinanceiraPage = () => {
       months[m].cats[cat] = (months[m].cats[cat] || 0) + v;
     }
 
-    // Fixed occurrences
     for (const occ of fixedOccurrences as any[]) {
       const m = new Date(occ.mes + "T00:00:00").getMonth();
       const v = Number(occ.valor) || 0;
@@ -180,9 +200,10 @@ const VisaoFinanceiraPage = () => {
       month: MONTH_LABELS[i],
       monthIndex: i,
       total: Math.round(months[i].total * 100) / 100,
+      renda: rendaMensal,
       cats: months[i].cats,
     }));
-  }, [receiptItems, manualExpenses, fixedOccurrences]);
+  }, [receiptItems, manualExpenses, fixedOccurrences, rendaMensal]);
 
   // ─── Previous year total ───
   const prevYearTotal = useMemo(() => {
@@ -213,6 +234,12 @@ const VisaoFinanceiraPage = () => {
     ? ((totalYear - prevYearTotal) / prevYearTotal) * 100
     : 0;
 
+  // ─── Income vs expenses ───
+  const rendaAnual = rendaMensal * 12;
+  const saldoMesAtual = rendaMensal - currentMonthTotal;
+  const percentComprometido = rendaMensal > 0 ? (currentMonthTotal / rendaMensal) * 100 : 0;
+  const saldoAnual = rendaAnual - totalYear;
+
   // ─── Category breakdown for bar chart ───
   const allCategories = useMemo(() => {
     const cats = new Set<string>();
@@ -237,31 +264,85 @@ const VisaoFinanceiraPage = () => {
 
   const isEmpty = totalYear === 0;
 
-  // ─── Insights ───
+  // ─── Insights (enhanced with income) ───
   const insights = useMemo(() => {
-    const msgs: string[] = [];
+    const msgs: { text: string; type: "info" | "warning" | "success" }[] = [];
+
+    // Income-based insights
+    if (rendaMensal > 0) {
+      if (percentComprometido > 100) {
+        msgs.push({
+          text: `⚠️ Seus gastos este mês (${fmtShort(currentMonthTotal)}) ultrapassam sua renda (${fmtShort(rendaMensal)}). Você está gastando ${(percentComprometido - 100).toFixed(0)}% a mais do que ganha.`,
+          type: "warning",
+        });
+      } else if (percentComprometido > 85) {
+        msgs.push({
+          text: `Atenção: ${percentComprometido.toFixed(0)}% da sua renda já está comprometida este mês. Sobram apenas ${fmtShort(saldoMesAtual)}.`,
+          type: "warning",
+        });
+      } else if (percentComprometido > 0 && percentComprometido <= 60) {
+        msgs.push({
+          text: `Ótimo controle! Você comprometeu apenas ${percentComprometido.toFixed(0)}% da renda. Sobram ${fmtShort(saldoMesAtual)} este mês.`,
+          type: "success",
+        });
+      }
+
+      // Suggest reducing top category if tight
+      if (percentComprometido > 75 && monthsWithData.length > 0) {
+        const currentCats = monthlyData[currentMonthIndex]?.cats || {};
+        const sortedCats = Object.entries(currentCats).sort((a, b) => b[1] - a[1]);
+        if (sortedCats.length > 0) {
+          const [topCat, topVal] = sortedCats[0];
+          const topPct = rendaMensal > 0 ? ((topVal / rendaMensal) * 100).toFixed(0) : "0";
+          msgs.push({
+            text: `A categoria "${topCat}" representa ${topPct}% da sua renda (${fmtShort(topVal)}). Considere reduzir para melhorar o saldo.`,
+            type: "info",
+          });
+        }
+      }
+    }
+
+    // General insights
     if (mediaMensal > 0) {
-      msgs.push(`Se continuar nesse ritmo, você gastará ${fmtShort(projecaoAnual)} este ano.`);
+      msgs.push({
+        text: `Se continuar nesse ritmo, você gastará ${fmtShort(projecaoAnual)} este ano.`,
+        type: "info",
+      });
     }
     if (monthVariation !== 0 && prevMonthTotal > 0) {
       const dir = monthVariation > 0 ? "aumentou" : "reduziu";
-      msgs.push(`Você ${dir} seus gastos em ${Math.abs(monthVariation).toFixed(1)}% comparado ao mês passado.`);
+      msgs.push({
+        text: `Você ${dir} seus gastos em ${Math.abs(monthVariation).toFixed(1)}% comparado ao mês passado.`,
+        type: monthVariation > 0 ? "warning" : "success",
+      });
     }
     if (mediaMensal > 0) {
       const economia10 = mediaMensal * 0.1 * 12;
-      msgs.push(`Reduzindo 10%, você economizaria ${fmtShort(economia10)} no ano.`);
+      msgs.push({
+        text: `Reduzindo 10%, você economizaria ${fmtShort(economia10)} no ano.`,
+        type: "info",
+      });
     }
     if (prevYearTotal > 0 && yearVariation !== 0) {
       const dir = yearVariation > 0 ? "aumento" : "redução";
-      msgs.push(`Comparado a ${yearNum - 1}, houve ${dir} de ${Math.abs(yearVariation).toFixed(1)}% nos gastos.`);
+      msgs.push({
+        text: `Comparado a ${yearNum - 1}, houve ${dir} de ${Math.abs(yearVariation).toFixed(1)}% nos gastos.`,
+        type: yearVariation > 0 ? "warning" : "success",
+      });
     }
     return msgs;
-  }, [mediaMensal, projecaoAnual, monthVariation, prevMonthTotal, prevYearTotal, yearVariation, yearNum]);
+  }, [mediaMensal, projecaoAnual, monthVariation, prevMonthTotal, prevYearTotal, yearVariation, yearNum, rendaMensal, percentComprometido, currentMonthTotal, saldoMesAtual, monthlyData, currentMonthIndex, monthsWithData.length]);
 
   const cardAnim = (i: number) => ({
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0, transition: { delay: i * 0.08 } },
   });
+
+  const insightIcon = (type: string) => {
+    if (type === "warning") return <AlertTriangle className="h-4 w-4 text-accent shrink-0" />;
+    if (type === "success") return <TrendingDown className="h-4 w-4 text-primary shrink-0" />;
+    return <Lightbulb className="h-4 w-4 text-muted-foreground shrink-0" />;
+  };
 
   return (
     <AppLayout>
@@ -273,7 +354,7 @@ const VisaoFinanceiraPage = () => {
             Visão Financeira
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Evolução, projeção e comparação dos seus gastos
+            Evolução, projeção e balanço completo de renda vs. gastos
           </p>
         </motion.div>
 
@@ -311,9 +392,84 @@ const VisaoFinanceiraPage = () => {
           </motion.div>
         ) : (
           <>
+            {/* ─── Income vs Expenses Summary ─── */}
+            {rendaMensal > 0 && (
+              <motion.div {...cardAnim(0)} className="glass-card p-6">
+                <h2 className="text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2">
+                  <Banknote className="h-4 w-4 text-primary" />
+                  Balanço do mês atual
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                  <div className="text-center p-3 rounded-xl bg-primary/5 border border-primary/10">
+                    <p className="text-xs text-muted-foreground mb-1">Renda mensal</p>
+                    <p className="text-xl font-bold font-mono text-primary">{fmtShort(rendaMensal)}</p>
+                  </div>
+                  <div className="text-center p-3 rounded-xl bg-accent/5 border border-accent/10">
+                    <p className="text-xs text-muted-foreground mb-1">Gastos este mês</p>
+                    <p className="text-xl font-bold font-mono text-accent">{fmtShort(currentMonthTotal)}</p>
+                  </div>
+                  <div className={`text-center p-3 rounded-xl border ${
+                    saldoMesAtual >= 0
+                      ? "bg-primary/5 border-primary/10"
+                      : "bg-destructive/5 border-destructive/10"
+                  }`}>
+                    <p className="text-xs text-muted-foreground mb-1">Saldo</p>
+                    <p className={`text-xl font-bold font-mono ${
+                      saldoMesAtual >= 0 ? "text-primary" : "text-destructive"
+                    }`}>
+                      {saldoMesAtual >= 0 ? "+" : ""}{fmtShort(saldoMesAtual)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Comprometimento bar */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center text-xs text-muted-foreground">
+                    <span>Renda comprometida</span>
+                    <span className={`font-mono font-medium ${
+                      percentComprometido > 100 ? "text-destructive" :
+                      percentComprometido > 85 ? "text-accent" : "text-primary"
+                    }`}>
+                      {percentComprometido.toFixed(0)}%
+                    </span>
+                  </div>
+                  <Progress
+                    value={Math.min(percentComprometido, 100)}
+                    className={`h-2.5 ${
+                      percentComprometido > 100 ? "[&>div]:bg-destructive" :
+                      percentComprometido > 85 ? "[&>div]:bg-accent" : "[&>div]:bg-primary"
+                    }`}
+                  />
+                  {percentComprometido > 100 && (
+                    <div className="flex items-center gap-2 mt-2 p-2.5 rounded-lg bg-destructive/10 border border-destructive/20">
+                      <ShieldAlert className="h-4 w-4 text-destructive shrink-0" />
+                      <p className="text-xs text-destructive">
+                        Gastos excedem a renda em {fmtShort(Math.abs(saldoMesAtual))}. Revise seus gastos urgentemente.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Income breakdown */}
+                {familyMembers.length > 1 && (
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <p className="text-xs text-muted-foreground mb-2">Composição da renda familiar</p>
+                    <div className="space-y-1.5">
+                      {familyMembers.map((m, i) => (
+                        <div key={i} className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">{m.nome} <span className="text-xs opacity-60">({m.papel})</span></span>
+                          <span className="font-mono text-foreground">{fmtShort(Number(m.renda_mensal))}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
             {/* KPI Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <motion.div {...cardAnim(0)}>
+              <motion.div {...cardAnim(1)}>
                 <Card className="bg-card border-border">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-1">
@@ -325,7 +481,7 @@ const VisaoFinanceiraPage = () => {
                 </Card>
               </motion.div>
 
-              <motion.div {...cardAnim(1)}>
+              <motion.div {...cardAnim(2)}>
                 <Card className="bg-card border-border">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-1">
@@ -337,7 +493,7 @@ const VisaoFinanceiraPage = () => {
                 </Card>
               </motion.div>
 
-              <motion.div {...cardAnim(2)}>
+              <motion.div {...cardAnim(3)}>
                 <Card className="bg-card border-border">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-1">
@@ -356,7 +512,7 @@ const VisaoFinanceiraPage = () => {
                 </Card>
               </motion.div>
 
-              <motion.div {...cardAnim(3)}>
+              <motion.div {...cardAnim(4)}>
                 <Card className="bg-card border-border">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-1">
@@ -382,10 +538,43 @@ const VisaoFinanceiraPage = () => {
               </motion.div>
             </div>
 
+            {/* Annual income vs expenses card (when income is set) */}
+            {rendaMensal > 0 && (
+              <motion.div {...cardAnim(4.5)}>
+                <Card className="bg-card border-border">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <PiggyBank className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium text-muted-foreground">Balanço anual {selectedYear}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Renda projetada</p>
+                        <p className="text-lg font-bold font-mono text-primary">{fmtShort(rendaAnual)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Gastos acumulados</p>
+                        <p className="text-lg font-bold font-mono text-accent">{fmtShort(totalYear)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Saldo anual</p>
+                        <p className={`text-lg font-bold font-mono ${saldoAnual >= 0 ? "text-primary" : "text-destructive"}`}>
+                          {saldoAnual >= 0 ? "+" : ""}{fmtShort(saldoAnual)}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
             {/* Chart */}
-            <motion.div {...cardAnim(4)} className="glass-card p-6">
+            <motion.div {...cardAnim(5)} className="glass-card p-6">
               <h2 className="text-sm font-medium text-muted-foreground mb-4">
                 Evolução mês a mês — {selectedYear}
+                {rendaMensal > 0 && viewMode === "total" && (
+                  <span className="text-xs ml-2 opacity-60">(linha tracejada = renda mensal)</span>
+                )}
               </h2>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
@@ -399,16 +588,27 @@ const VisaoFinanceiraPage = () => {
                     />
                     <Tooltip content={<ChartTooltipContent />} />
                     {viewMode === "total" ? (
-                      <Bar dataKey="total" radius={[6, 6, 0, 0]} maxBarSize={40}>
-                        {monthlyData.map((entry, i) => (
-                          <Cell
-                            key={i}
-                            fill={i === currentMonthIndex && yearNum === now.getFullYear()
-                              ? "hsl(160, 84%, 39%)"
-                              : "hsl(215, 25%, 20%)"}
-                          />
-                        ))}
-                      </Bar>
+                      <>
+                        <Bar dataKey="total" name="total" radius={[6, 6, 0, 0]} maxBarSize={40}>
+                          {monthlyData.map((entry, i) => (
+                            <Cell
+                              key={i}
+                              fill={
+                                entry.total > rendaMensal && rendaMensal > 0
+                                  ? "hsl(0, 84%, 60%)"
+                                  : i === currentMonthIndex && yearNum === now.getFullYear()
+                                    ? "hsl(160, 84%, 39%)"
+                                    : "hsl(215, 25%, 20%)"
+                              }
+                            />
+                          ))}
+                        </Bar>
+                        {rendaMensal > 0 && (
+                          <Bar dataKey="renda" name="renda" radius={[0, 0, 0, 0]} maxBarSize={0} hide>
+                            {monthlyData.map((_, i) => <Cell key={i} fill="transparent" />)}
+                          </Bar>
+                        )}
+                      </>
                     ) : (
                       allCategories.map((cat, ci) => (
                         <Bar
@@ -422,9 +622,34 @@ const VisaoFinanceiraPage = () => {
                         />
                       ))
                     )}
+                    {/* Reference line for income */}
+                    {rendaMensal > 0 && viewMode === "total" && (
+                      <CartesianGrid
+                        horizontalPoints={[]}
+                        verticalPoints={[]}
+                      />
+                    )}
                   </BarChart>
                 </ResponsiveContainer>
               </div>
+
+              {/* Income reference line legend */}
+              {rendaMensal > 0 && viewMode === "total" && (
+                <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "hsl(160, 84%, 39%)" }} />
+                    <span>Mês atual</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "hsl(0, 84%, 60%)" }} />
+                    <span>Acima da renda</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "hsl(215, 25%, 20%)" }} />
+                    <span>Outros meses</span>
+                  </div>
+                </div>
+              )}
 
               {/* Category legend for stacked mode */}
               {viewMode === "categoria" && (
@@ -444,18 +669,32 @@ const VisaoFinanceiraPage = () => {
 
             {/* Insights */}
             {insights.length > 0 && (
-              <motion.div {...cardAnim(5)} className="glass-card p-6">
+              <motion.div {...cardAnim(6)} className="glass-card p-6">
                 <h2 className="text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2">
                   <Lightbulb className="h-4 w-4 text-accent" />
                   Insights
                 </h2>
                 <div className="space-y-3">
-                  {insights.map((msg, i) => (
-                    <div key={i} className="glass-card-inner p-3 text-sm text-muted-foreground">
-                      {msg}
+                  {insights.map((insight, i) => (
+                    <div key={i} className={`glass-card-inner p-3 text-sm flex items-start gap-2.5 ${
+                      insight.type === "warning" ? "border-l-2 border-accent" :
+                      insight.type === "success" ? "border-l-2 border-primary" : ""
+                    }`}>
+                      {insightIcon(insight.type)}
+                      <span className="text-muted-foreground">{insight.text}</span>
                     </div>
                   ))}
                 </div>
+              </motion.div>
+            )}
+
+            {/* No income hint */}
+            {rendaMensal === 0 && (
+              <motion.div {...cardAnim(7)} className="glass-card-inner p-4 flex items-center gap-3">
+                <Wallet className="h-5 w-5 text-muted-foreground shrink-0" />
+                <p className="text-sm text-muted-foreground">
+                  Cadastre sua renda em <a href="/family" className="text-primary underline underline-offset-2">Família</a> para ver o balanço completo de renda vs. gastos.
+                </p>
               </motion.div>
             )}
           </>
