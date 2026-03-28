@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, X, ShoppingCart, TrendingDown, Store, Search, Lightbulb, Sparkles, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -8,6 +8,8 @@ import PremiumGate from "@/components/PremiumGate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import SmartSuggestions from "@/components/SmartSuggestions";
+import type { PurchaseRecord } from "@/lib/purchase-recurrence";
 
 interface ListItem {
   id: string;
@@ -39,6 +41,7 @@ const ListaInteligentePage = () => {
   const [inputValue, setInputValue] = useState("");
   const [inputQty, setInputQty] = useState(1);
   const [generating, setGenerating] = useState(false);
+  const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<string>>(new Set());
 
   const addItem = () => {
     const nome = inputValue.trim();
@@ -109,6 +112,39 @@ const ListaInteligentePage = () => {
     historyData.items.forEach((i) => set.add(i.nome_normalizado));
     return [...set].sort();
   }, [historyData?.items]);
+
+  // Build purchase records for smart suggestions
+  const purchaseRecords: PurchaseRecord[] = useMemo(() => {
+    if (!historyData?.items || !historyData?.receipts) return [];
+    const receiptDateMap = new Map<string, string>();
+    historyData.receipts.forEach((r) => receiptDateMap.set(r.id, r.data_compra));
+
+    return historyData.items
+      .filter((i) => receiptDateMap.has(i.receipt_id))
+      .map((i) => ({
+        nome_normalizado: i.nome_normalizado,
+        quantidade: 1, // each receipt_item row represents a line item
+        preco_unitario: i.preco_unitario,
+        data_compra: receiptDateMap.get(i.receipt_id)!,
+      }));
+  }, [historyData?.items, historyData?.receipts]);
+
+  const existingItemNames = useMemo(
+    () => new Set(items.map((i) => i.nome.toLowerCase())),
+    [items]
+  );
+
+  const handleAcceptSuggestion = useCallback((nome: string, suggestedQty: number) => {
+    if (items.some((i) => i.nome.toLowerCase() === nome.toLowerCase())) return;
+    setItems((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), nome, quantidade: Math.max(1, Math.round(suggestedQty)) },
+    ]);
+  }, [items]);
+
+  const handleDismissSuggestion = useCallback((nome: string) => {
+    setDismissedSuggestions((prev) => new Set(prev).add(nome.toLowerCase()));
+  }, []);
 
   const filteredSuggestions = useMemo(() => {
     if (!inputValue.trim() || inputValue.length < 2) return [];
@@ -436,6 +472,15 @@ const ListaInteligentePage = () => {
             </div>
           )}
         </motion.div>
+
+        {/* Smart suggestions */}
+        <SmartSuggestions
+          purchaseRecords={purchaseRecords}
+          existingItemNames={existingItemNames}
+          onAccept={handleAcceptSuggestion}
+          onDismiss={handleDismissSuggestion}
+          dismissedNames={dismissedSuggestions}
+        />
 
         {/* Results */}
         {items.length > 0 && analysis.length > 0 && (
