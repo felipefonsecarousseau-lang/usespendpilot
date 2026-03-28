@@ -41,6 +41,7 @@ const ListaInteligentePage = () => {
   const [inputValue, setInputValue] = useState("");
   const [inputQty, setInputQty] = useState(1);
   const [generating, setGenerating] = useState(false);
+  const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<string>>(new Set());
 
   const addItem = () => {
     const nome = inputValue.trim();
