@@ -17,6 +17,8 @@ interface ReceiptItem {
   quantidade: number;
   preco_unitario: number;
   preco_total: number;
+  venda_por_peso: boolean;
+  preco_por_kg: number | null;
 }
 
 interface ReceiptData {
