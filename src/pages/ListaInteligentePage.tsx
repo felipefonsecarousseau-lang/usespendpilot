@@ -473,6 +473,15 @@ const ListaInteligentePage = () => {
           )}
         </motion.div>
 
+        {/* Smart suggestions */}
+        <SmartSuggestions
+          purchaseRecords={purchaseRecords}
+          existingItemNames={existingItemNames}
+          onAccept={handleAcceptSuggestion}
+          onDismiss={handleDismissSuggestion}
+          dismissedNames={dismissedSuggestions}
+        />
+
         {/* Results */}
         {items.length > 0 && analysis.length > 0 && (
           <>
