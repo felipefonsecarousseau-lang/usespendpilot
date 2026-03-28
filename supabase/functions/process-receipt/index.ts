@@ -14,11 +14,11 @@ interface ReceiptItem {
   nome_produto: string;
   nome_normalizado: string;
   categoria: ProductCategory;
-  quantidade: number;
-  preco_unitario: number;
+  quantidade: number;      // Para produtos por peso: peso em kg (ex: 0.345)
+  preco_unitario: number;  // Para produtos por peso: preço/kg (ex: 12.90)
   preco_total: number;
-  venda_por_peso: boolean;
-  preco_por_kg: number | null;
+  venda_por_peso: boolean; // true quando vendido pesado na balança
+  preco_por_kg: number | null; // preço por 1kg (igual a preco_unitario quando venda_por_peso=true)
 }
 
 interface ReceiptData {
@@ -56,7 +56,10 @@ function validateAndCleanReceipt(raw: any): { data: ReceiptData; warnings: strin
 
     const nome_produto = String(item.nome_produto || item.nome_normalizado).trim();
     const nome_normalizado = String(item.nome_normalizado || item.nome_produto).trim();
-    let quantidade = Math.max(Number(item.quantidade) || 1, 1);
+    const venda_por_peso = item.venda_por_peso === true;
+    // Para produtos por peso: quantidade pode ser fracionária (ex: 0.345 kg)
+    const minQty = venda_por_peso ? 0.001 : 1;
+    let quantidade = Math.max(Number(item.quantidade) || minQty, minQty);
     let preco_unitario = Math.abs(Number(item.preco_unitario) || 0);
     let preco_total = Math.abs(Number(item.preco_total) || 0);
 
@@ -70,6 +73,13 @@ function validateAndCleanReceipt(raw: any): { data: ReceiptData; warnings: strin
       preco_unitario = Math.round((preco_total / quantidade) * 100) / 100;
     } else if (preco_unitario > 0 && preco_total === 0) {
       preco_total = Math.round(quantidade * preco_unitario * 100) / 100;
+    }
+
+    // Para produtos por peso: preco_por_kg = preco_unitario (já está em R$/kg)
+    // Para outros: tentar inferir preco_por_kg a partir do nome (ex: "Arroz 5kg")
+    let preco_por_kg: number | null = null;
+    if (venda_por_peso) {
+      preco_por_kg = preco_unitario; // preco_unitario já é R$/kg
     }
 
     if (preco_total === 0) {
@@ -96,7 +106,7 @@ function validateAndCleanReceipt(raw: any): { data: ReceiptData; warnings: strin
     }
 
     seen.set(dedupKey, cleanItems.length);
-    cleanItems.push({ nome_produto, nome_normalizado, categoria, quantidade, preco_unitario, preco_total });
+    cleanItems.push({ nome_produto, nome_normalizado, categoria, quantidade, preco_unitario, preco_total, venda_por_peso, preco_por_kg });
   }
 
   if (cleanItems.length === 0) throw new Error("Nenhum item válido após limpeza");
@@ -154,6 +164,8 @@ async function saveReceipt(supabaseAdmin: any, userId: string, receiptData: Rece
     quantidade: item.quantidade,
     preco_unitario: item.preco_unitario,
     preco_total: item.preco_total,
+    ...(item.venda_por_peso && { venda_por_peso: item.venda_por_peso }),
+    ...(item.preco_por_kg !== null && { preco_por_kg: item.preco_por_kg }),
   }));
 
   const { error: itemsErr } = await supabaseAdmin.from("receipt_items").insert(itemsToInsert);
@@ -254,16 +266,26 @@ REGRAS OBRIGATÓRIAS:
 - Se a quantidade não estiver explícita, assuma 1.
 - Se houver apenas preço total, use como unitário quando quantidade = 1.
 
+PRODUTOS VENDIDOS POR PESO (hortifruti, carnes, frios, queijos, embutidos, granel):
+- Nesses produtos a nota mostra: PESO em kg (ex: 0.570 KG) e PREÇO POR KG (ex: R$ 4,99/KG).
+- Quando identificar este padrão, defina venda_por_peso = true.
+- quantidade = peso em kg com decimais (ex: 0.570). NUNCA arredonde para 1.
+- preco_unitario = preço por 1 kg (ex: 4.99). Este é o preco_por_kg.
+- preco_total = peso × preço/kg (ex: 0.570 × 4.99 = 2.84).
+- Exemplos: "BANANA PRATA 0.570 KG R$4,99/KG R$2,84" → quantidade=0.570, preco_unitario=4.99, preco_total=2.84, venda_por_peso=true.
+- Exemplos: "FILE PEITO FRANGO 1.235 KG R$14,90/KG R$18,40" → quantidade=1.235, preco_unitario=14.90, preco_total=18.40, venda_por_peso=true.
+
 IGNORE COMPLETAMENTE:
 - Linhas de CPF, troco, subtotal geral, forma de pagamento, impostos, separadores visuais.
 
 NORMALIZAÇÃO DE NOMES:
-- Remova códigos internos do produto.
+- Remova códigos internos do produto e marcas quando possível.
 - Padronize: "ARROZ T1 5KG" → "Arroz 5kg", "DET LIMPOL 500ML" → "Detergente Limpol 500ml", "REF COCA 2L" → "Refrigerante Coca-Cola 2L".
+- Para produtos por peso: "BANANA PRATA 0.570KG" → "Banana Prata", "FILE PEITO FRANGO 1.235KG" → "Filé de Frango".
 
 CATEGORIZAÇÃO (use APENAS estas):
 mercado, higiene, limpeza, bebidas, padaria, hortifruti, outros.
-Se não souber a categoria, use "outros".`;
+Produtos por peso de hortifruti → categoria "hortifruti". Carnes/frios → "mercado".`;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -309,13 +331,15 @@ Se não souber a categoria, use "outros".`;
                       type: "object",
                       properties: {
                         nome_produto: { type: "string", description: "Nome original do produto na nota" },
-                        nome_normalizado: { type: "string", description: "Nome normalizado e legível" },
+                        nome_normalizado: { type: "string", description: "Nome normalizado e legível, sem marca quando possível" },
                         categoria: { type: "string", enum: ["mercado", "higiene", "limpeza", "bebidas", "padaria", "hortifruti", "outros"] },
-                        quantidade: { type: "number" },
-                        preco_unitario: { type: "number" },
-                        preco_total: { type: "number" },
+                        quantidade: { type: "number", description: "Para produtos por peso: peso em kg com decimais (ex: 0.570). Para demais: quantidade de unidades." },
+                        preco_unitario: { type: "number", description: "Para produtos por peso: preço por 1 kg (ex: 4.99). Para demais: preço por unidade." },
+                        preco_total: { type: "number", description: "Valor total pago por este item" },
+                        venda_por_peso: { type: "boolean", description: "true se o produto é vendido por peso na balança (hortifruti, carnes, frios, queijos, granel)" },
+                        preco_por_kg: { type: "number", description: "Preço por 1 kg. Obrigatório quando venda_por_peso=true. Igual ao preco_unitario nesse caso." },
                       },
-                      required: ["nome_produto", "nome_normalizado", "categoria", "quantidade", "preco_unitario", "preco_total"],
+                      required: ["nome_produto", "nome_normalizado", "categoria", "quantidade", "preco_unitario", "preco_total", "venda_por_peso"],
                       additionalProperties: false,
                     },
                   },

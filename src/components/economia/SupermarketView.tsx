@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { ShoppingCart, TrendingDown, Award, PiggyBank, Search, Scale } from "lucide-react";
+import { TrendingDown, Award, PiggyBank, Search, Scale, CheckCircle2, ShoppingBasket } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { generateInsights } from "@/lib/insights-engine";
@@ -156,6 +156,55 @@ const SupermarketView = ({ enrichedItems, period }: Props) => {
     if (selectedProduct !== "all") return [];
     return generateInsights(enrichedItems, Number(period));
   }, [enrichedItems, period, selectedProduct]);
+
+  // Comparativo por tipo de produto: mostra o mais barato de cada tipo
+  const productTypeComparison = useMemo(() => {
+    // Agrupa por baseNameClean, calcula preço/unidade normalizado
+    const typeMap = new Map<string, {
+      baseName: string;
+      purchases: Array<{ pricePerUnit: number; store: string; date: string }>;
+    }>();
+
+    for (const item of normalizedItems) {
+      const key = item.norm.baseNameClean;
+      if (!key) continue;
+
+      // Preço por unidade: usa pricePerUnit normalizado ou preco_unitario
+      const unitPrice = item.norm.pricePerUnit ?? item.preco_unitario;
+      if (!unitPrice || unitPrice <= 0) continue;
+
+      const entry = typeMap.get(key) ?? { baseName: item.norm.baseName, purchases: [] };
+      entry.purchases.push({
+        pricePerUnit: unitPrice,
+        store: item.store_nome,
+        date: item.data_compra || "",
+      });
+      typeMap.set(key, entry);
+    }
+
+    // Só mostra tipos com pelo menos 1 compra, ordenado pelo preço mais barato encontrado
+    return [...typeMap.entries()]
+      .map(([key, v]) => {
+        const sorted = [...v.purchases].sort((a, b) => a.pricePerUnit - b.pricePerUnit);
+        const cheapest = sorted[0];
+        const mostExpensive = sorted[sorted.length - 1];
+        const unit = normalizedItems.find((i) => i.norm.baseNameClean === key)?.norm.unit || null;
+        const hasPriceRange = sorted.length > 1 && mostExpensive.pricePerUnit > cheapest.pricePerUnit * 1.05;
+        return {
+          key,
+          baseName: v.baseName,
+          cheapestPrice: cheapest.pricePerUnit,
+          cheapestStore: cheapest.store,
+          mostExpensivePrice: mostExpensive.pricePerUnit,
+          savings: hasPriceRange ? mostExpensive.pricePerUnit - cheapest.pricePerUnit : 0,
+          unit,
+          totalPurchases: v.purchases.length,
+          hasPriceRange,
+        };
+      })
+      .filter((t) => t.totalPurchases >= 1)
+      .sort((a, b) => b.savings - a.savings || a.baseName.localeCompare(b.baseName));
+  }, [normalizedItems]);
 
   // Store ranking
   const storeRanking = useMemo(() => {
@@ -352,6 +401,49 @@ const SupermarketView = ({ enrichedItems, period }: Props) => {
               Comprando sempre no supermercado mais barato para cada produto.
             </p>
           </motion.div>
+
+          {/* Comparativo por tipo de produto */}
+          {productTypeComparison.length > 0 && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="glass-card p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="rounded-full bg-primary/10 p-2.5">
+                  <ShoppingBasket className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold">Comparativo por Produto</h2>
+                  <p className="text-xs text-muted-foreground">Menor preço encontrado para cada tipo</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {productTypeComparison.slice(0, 12).map((t) => (
+                  <div key={t.key} className="glass-card-inner p-3 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{t.baseName}</p>
+                        <p className="text-xs text-muted-foreground truncate">{t.cheapestStore}</p>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-sm font-mono text-primary font-semibold">
+                        {t.unit ? formatPricePerUnit(t.cheapestPrice, t.unit) : fmtStr(t.cheapestPrice)}
+                      </p>
+                      {t.hasPriceRange && (
+                        <p className="text-[10px] text-muted-foreground">
+                          economia de {t.unit ? formatPricePerUnit(t.savings, t.unit) : fmtStr(t.savings)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {productTypeComparison.length > 12 && (
+                <p className="text-xs text-muted-foreground mt-3 text-center">
+                  +{productTypeComparison.length - 12} produtos • selecione um produto acima para ver detalhes
+                </p>
+              )}
+            </motion.div>
+          )}
 
           <div className="grid md:grid-cols-2 gap-6">
             {/* Ranking */}

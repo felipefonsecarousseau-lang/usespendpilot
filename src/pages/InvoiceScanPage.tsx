@@ -22,6 +22,8 @@ interface ParsedItem {
   categoria: string;
   peso_quantidade: number | null;
   unidade: string | null;
+  venda_por_peso: boolean;
+  preco_por_kg: number | null;
 }
 
 interface ReceiptStoreData {
@@ -122,6 +124,7 @@ const InvoiceScanPage = () => {
 
         setItems(
           receipt.items.map((item: any) => {
+            const vendaPorPeso = item.venda_por_peso === true;
             const norm = normalizeProduct(
               item.nome_normalizado || item.nome_produto,
               item.quantidade || 1,
@@ -134,8 +137,11 @@ const InvoiceScanPage = () => {
               preco_unitario: item.preco_unitario,
               quantidade: item.quantidade,
               categoria: item.categoria,
-              peso_quantidade: norm.quantity,
-              unidade: norm.unit,
+              // Para produtos por peso: quantidade já é o peso em kg
+              peso_quantidade: vendaPorPeso ? item.quantidade : norm.quantity,
+              unidade: vendaPorPeso ? "kg" : norm.unit,
+              venda_por_peso: vendaPorPeso,
+              preco_por_kg: vendaPorPeso ? item.preco_unitario : (item.preco_por_kg ?? null),
             };
           })
         );
@@ -171,6 +177,8 @@ const InvoiceScanPage = () => {
           quantidade: item.quantidade,
           preco_unitario: item.preco_unitario,
           preco_total: item.valor,
+          venda_por_peso: item.venda_por_peso,
+          preco_por_kg: item.preco_por_kg,
         })),
       };
 
@@ -206,8 +214,12 @@ const InvoiceScanPage = () => {
       updated[index] = { ...updated[index], [field]: value };
       if (field === "quantidade" || field === "preco_unitario") {
         const qty = field === "quantidade" ? Number(value) : updated[index].quantidade;
-        const unit = field === "preco_unitario" ? Number(value) : updated[index].preco_unitario;
-        updated[index].valor = Math.round(qty * unit * 100) / 100;
+        const unitPrice = field === "preco_unitario" ? Number(value) : updated[index].preco_unitario;
+        updated[index].valor = Math.round(qty * unitPrice * 100) / 100;
+        // Para produtos por peso: preco_unitario é o preço/kg
+        if (updated[index].venda_por_peso) {
+          updated[index].preco_por_kg = field === "preco_unitario" ? Number(value) : unitPrice;
+        }
       }
       return updated;
     });
@@ -339,25 +351,40 @@ const InvoiceScanPage = () => {
                         className="text-sm"
                       />
                       <div className="flex gap-2">
-                        <Input
-                          type="number"
-                          value={item.quantidade}
-                          onChange={(e) => updateItem(i, "quantidade", Number(e.target.value))}
-                          placeholder="Qtd"
-                          className="text-sm w-20"
-                          min={1}
-                          step={1}
-                        />
-                        <Input
-                          type="number"
-                          value={item.preco_unitario}
-                          onChange={(e) => updateItem(i, "preco_unitario", Number(e.target.value))}
-                          placeholder="Preço unit."
-                          className="text-sm flex-1"
-                          min={0}
-                          step={0.01}
-                        />
+                        <div className="flex-1">
+                          <label className="text-[10px] text-muted-foreground">
+                            {item.venda_por_peso ? "Peso (kg)" : "Quantidade"}
+                          </label>
+                          <Input
+                            type="number"
+                            value={item.quantidade}
+                            onChange={(e) => updateItem(i, "quantidade", Number(e.target.value))}
+                            placeholder={item.venda_por_peso ? "Ex: 0.570" : "Qtd"}
+                            className="text-sm"
+                            min={item.venda_por_peso ? 0.001 : 1}
+                            step={item.venda_por_peso ? 0.001 : 1}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="text-[10px] text-muted-foreground">
+                            {item.venda_por_peso ? "Preço/kg (R$)" : "Preço unit. (R$)"}
+                          </label>
+                          <Input
+                            type="number"
+                            value={item.preco_unitario}
+                            onChange={(e) => updateItem(i, "preco_unitario", Number(e.target.value))}
+                            placeholder={item.venda_por_peso ? "Ex: 4.99" : "Preço unit."}
+                            className="text-sm"
+                            min={0}
+                            step={0.01}
+                          />
+                        </div>
                       </div>
+                      {item.venda_por_peso && (
+                        <div className="text-xs text-muted-foreground bg-primary/5 rounded px-2 py-1">
+                          Total calculado: {item.quantidade.toFixed(3)} kg × R$ {item.preco_unitario.toFixed(2).replace(".", ",")} = R$ {item.valor.toFixed(2).replace(".", ",")}
+                        </div>
+                      )}
                       <div className="flex gap-2">
                         <div className="flex-1">
                           <label className="text-[10px] text-muted-foreground">Peso/Volume</label>
@@ -404,24 +431,42 @@ const InvoiceScanPage = () => {
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{item.nome_normalizado}</p>
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
                           <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded">
                             {item.categoria}
                           </span>
-                          {item.quantidade > 1 && (
-                            <span className="text-xs text-muted-foreground">
-                              {item.quantidade}× {formatCurrency(item.preco_unitario)}
-                            </span>
-                          )}
-                          {item.peso_quantidade && item.unidade && (
-                            <span className="text-xs text-muted-foreground">
-                              {item.peso_quantidade}{item.unidade}
-                            </span>
+                          {item.venda_por_peso ? (
+                            <>
+                              <span className="text-xs text-muted-foreground bg-primary/10 text-primary px-2 py-0.5 rounded">
+                                por kg
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {item.quantidade.toFixed(3).replace(".", ",")} kg × {formatCurrency(item.preco_unitario)}/kg
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              {item.quantidade > 1 && (
+                                <span className="text-xs text-muted-foreground">
+                                  {item.quantidade}× {formatCurrency(item.preco_unitario)}
+                                </span>
+                              )}
+                              {item.peso_quantidade && item.unidade && (
+                                <span className="text-xs text-muted-foreground">
+                                  {item.peso_quantidade}{item.unidade}
+                                </span>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-mono">{formatCurrency(item.valor)}</span>
+                        <div className="text-right">
+                          <span className="text-sm font-mono">{formatCurrency(item.valor)}</span>
+                          {item.venda_por_peso && item.preco_por_kg && (
+                            <p className="text-[10px] text-muted-foreground">{formatCurrency(item.preco_por_kg)}/kg</p>
+                          )}
+                        </div>
                         {!receiptSaved && (
                           <>
                             <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setEditingIndex(i)}>
