@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, X, ShoppingCart, TrendingDown, Store, Search, Lightbulb, Sparkles, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -8,6 +8,8 @@ import PremiumGate from "@/components/PremiumGate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import SmartSuggestions from "@/components/SmartSuggestions";
+import type { PurchaseRecord } from "@/lib/purchase-recurrence";
 
 interface ListItem {
   id: string;
