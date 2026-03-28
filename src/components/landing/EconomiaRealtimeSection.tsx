@@ -1,97 +1,91 @@
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, TrendingDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { mockPriceComparison } from "@/data/mockLandingData";
 import { Link } from "react-router-dom";
+import { mockPriceComparison } from "@/data/mockLandingData";
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
+  hidden: { opacity: 0, y: 24 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
 };
 
 const stagger = {
-  visible: { transition: { staggerChildren: 0.12 } },
+  visible: { transition: { staggerChildren: 0.08 } },
 };
 
 const EconomiaRealtimeSection = () => {
-  const { product, stores, savings } = mockPriceComparison;
+  const { stores, products, savings } = mockPriceComparison;
 
   return (
     <motion.section
       initial="hidden"
       whileInView="visible"
-      viewport={{ once: true, margin: "-80px" }}
+      viewport={{ once: true, margin: "-60px" }}
       variants={stagger}
       className="py-10 md:py-20"
     >
-      <motion.h2
-        variants={fadeUp}
-        className="text-3xl md:text-4xl font-bold text-foreground"
-      >
-        🔍 Veja Sua Economia em Tempo Real
+      <motion.div variants={fadeUp} className="flex items-center gap-3 mb-2">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+          <TrendingDown className="h-5 w-5 text-primary" />
+        </div>
+        <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Comparação de preços</p>
+      </motion.div>
+      <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-bold text-foreground mb-3">
+        Seus mercados, seus preços
       </motion.h2>
-      <motion.p
-        variants={fadeUp}
-        className="mt-3 text-lg text-muted-foreground"
-      >
-        Compare preços entre supermercados com base nas suas compras.
+      <motion.p variants={fadeUp} className="text-lg text-muted-foreground mb-10 max-w-xl">
+        Com base nas suas compras, o SpendPilot mostra qual mercado compensa mais para cada produto.
       </motion.p>
 
-      <motion.div
-        variants={fadeUp}
-        className="mt-10 grid gap-4 md:grid-cols-2"
-      >
-        {stores.map((store) => (
-          <Card
-            key={store.name}
-            className={`relative overflow-hidden border ${
-              store.isCheapest
-                ? "border-primary/40 bg-primary/5"
-                : "border-border bg-card"
-            }`}
-          >
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-medium text-muted-foreground">
-                  {store.name}
-                </p>
+      {/* Cabeçalho das lojas */}
+      <motion.div variants={fadeUp} className="glass-card overflow-hidden">
+        {/* Header row */}
+        <div className="grid grid-cols-3 px-6 py-3 border-b border-border bg-secondary/30">
+          <span className="text-xs font-medium text-muted-foreground">Produto</span>
+          {stores.map((s) => (
+            <span key={s.name} className={`text-xs font-medium text-right ${s.isCheapest ? "text-primary" : "text-muted-foreground"}`}>
+              {s.name}
+              {s.isCheapest && (
+                <span className="ml-1.5 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px]">✓ mais barato</span>
+              )}
+            </span>
+          ))}
+        </div>
+
+        {/* Product rows */}
+        {products.map((product, idx) => {
+          const cheapestIdx = product.prices.indexOf(Math.min(...product.prices));
+          return (
+            <div key={product.name} className={`grid grid-cols-3 px-6 py-4 ${idx < products.length - 1 ? "border-b border-border/50" : ""}`}>
+              <span className="text-sm text-foreground font-medium">{product.name}</span>
+              {product.prices.map((price, pi) => (
                 <span
-                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                    store.isCheapest
-                      ? "bg-primary/15 text-primary"
-                      : "bg-destructive/15 text-destructive"
-                  }`}
+                  key={pi}
+                  className={`text-sm font-mono text-right ${pi === cheapestIdx ? "text-primary font-semibold" : "text-muted-foreground"}`}
                 >
-                  {store.badge}
+                  R$ {price.toFixed(2).replace(".", ",")}
                 </span>
-              </div>
-              <p className="text-sm text-muted-foreground">{product}</p>
-              <p
-                className={`mt-1 text-3xl font-bold ${
-                  store.isCheapest ? "text-primary" : "text-foreground"
-                }`}
-              >
-                R$ {store.price.toFixed(2).replace(".", ",")}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
+              ))}
+            </div>
+          );
+        })}
+
+        {/* Savings footer */}
+        <div className="px-6 py-4 bg-primary/5 border-t border-primary/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <p className="text-sm font-semibold text-primary">
+            Economia total nesta compra: R$ {savings.toFixed(2).replace(".", ",")}
+          </p>
+          <Link to="/auth?mode=signup">
+            <Button variant="outline" size="sm">
+              Ver minha comparação <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
       </motion.div>
 
-      <motion.div
-        variants={fadeUp}
-        className="mt-6 flex flex-col sm:flex-row items-start sm:items-center gap-4"
-      >
-        <p className="text-lg font-semibold text-primary">
-          💰 Economize R$ {savings.toFixed(2).replace(".", ",")} nesta compra
-        </p>
-        <Link to="/auth?mode=signup">
-          <Button variant="outline" size="sm">
-            Ver mais ofertas <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </Link>
-      </motion.div>
+      <motion.p variants={fadeUp} className="mt-4 text-xs text-muted-foreground">
+        Dados ilustrativos. Sua comparação é gerada com base no seu histórico real de compras.
+      </motion.p>
     </motion.section>
   );
 };
