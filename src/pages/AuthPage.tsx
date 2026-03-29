@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
+import { lovable } from "@/integrations/lovable/index";
 
 const AuthPage = () => {
   const [searchParams] = useSearchParams();
