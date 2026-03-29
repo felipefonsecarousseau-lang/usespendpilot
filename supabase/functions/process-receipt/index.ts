@@ -164,8 +164,6 @@ async function saveReceipt(supabaseAdmin: any, userId: string, receiptData: Rece
     quantidade: item.quantidade,
     preco_unitario: item.preco_unitario,
     preco_total: item.preco_total,
-    ...(item.venda_por_peso && { venda_por_peso: item.venda_por_peso }),
-    ...(item.preco_por_kg !== null && { preco_por_kg: item.preco_por_kg }),
   }));
 
   const { error: itemsErr } = await supabaseAdmin.from("receipt_items").insert(itemsToInsert);
