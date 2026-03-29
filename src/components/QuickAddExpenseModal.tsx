@@ -58,6 +58,7 @@ export default function QuickAddExpenseModal({ open, onClose }: QuickAddExpenseM
   const [nome, setNome] = useState("");
   const [categoria, setCategoria] = useState("outros");
   const [tipoPagamento, setTipoPagamento] = useState("");
+  const [data, setData] = useState(() => new Date().toISOString().split("T")[0]);
   const [autoSuggested, setAutoSuggested] = useState(false);
   const valorRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
@@ -83,6 +84,7 @@ export default function QuickAddExpenseModal({ open, onClose }: QuickAddExpenseM
     setNome("");
     setCategoria("outros");
     setTipoPagamento("");
+    setData(new Date().toISOString().split("T")[0]);
     setAutoSuggested(false);
   };
 
@@ -97,7 +99,7 @@ export default function QuickAddExpenseModal({ open, onClose }: QuickAddExpenseM
         nome: nome.trim() || "Gasto rápido",
         valor: numVal,
         categoria,
-        data: new Date().toISOString().split("T")[0],
+        data,
         tipo_pagamento: tipoPagamento || null,
       });
       if (error) throw error;
@@ -185,6 +187,17 @@ export default function QuickAddExpenseModal({ open, onClose }: QuickAddExpenseM
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          {/* Data */}
+          <div>
+            <Label className="text-xs text-muted-foreground">Data</Label>
+            <Input
+              type="date"
+              value={data}
+              onChange={(e) => setData(e.target.value)}
+              className="mt-1"
+            />
           </div>
 
           {/* Payment type */}
