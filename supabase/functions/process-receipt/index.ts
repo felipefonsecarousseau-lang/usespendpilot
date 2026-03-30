@@ -222,9 +222,9 @@ serve(async (req) => {
       // Validate the provided data
       const { data: validatedData, warnings } = validateAndCleanReceipt(receipt_data);
 
-      console.log("[OCR] Saving receipt from user confirmation", { user_id: user.id, items: validatedData.items.length });
+      console.log("[OCR] Saving receipt from user confirmation", { user_id: userId, items: validatedData.items.length });
 
-      const result = await saveReceipt(supabaseAdmin, user.id, validatedData, req);
+      const result = await saveReceipt(supabaseAdmin, userId, validatedData, req);
 
       return new Response(
         JSON.stringify({ success: true, ...result, data: validatedData, warnings }),
