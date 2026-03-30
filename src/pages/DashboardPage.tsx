@@ -502,8 +502,10 @@ const DashboardPage = () => {
           {hasData && <FinancialAdvisorCard recommendations={recommendations} />}
         </PremiumGate>
 
-        {/* Advanced Insights — always visible */}
-        <AdvancedInsightsCard insights={advancedInsights} />
+        {/* Advanced Insights — Premium only */}
+        <PremiumGate inline>
+          <AdvancedInsightsCard insights={advancedInsights} />
+        </PremiumGate>
       </div>
     </AppLayout>
   );

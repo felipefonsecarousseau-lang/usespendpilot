@@ -255,7 +255,7 @@ serve(async (req) => {
       }
     }
 
-    console.log("[OCR] Starting receipt processing (parse only)", { user_id: user.id, has_base64: !!image_base64, has_url: !!image_url, mime_type });
+    console.log("[OCR] Starting receipt processing (parse only)", { user_id: userId, has_base64: !!image_base64, has_url: !!image_url, mime_type });
 
     // Detect MIME type from the provided mime_type or default to jpeg
     const detectedMime = mime_type || "image/jpeg";
