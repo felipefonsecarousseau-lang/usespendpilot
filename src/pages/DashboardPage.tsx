@@ -423,32 +423,34 @@ const DashboardPage = () => {
             )}
           </motion.div>
 
-          {/* Alertas */}
-          <motion.div
-            custom={4}
-            variants={cardVariants}
-            initial="initial"
-            animate="animate"
-            className="glass-card p-6 md:col-span-2"
-          >
-            <h2 className="text-sm font-medium text-muted-foreground mb-4">Pontos de atenção</h2>
-            <div className="space-y-3">
-              {alertas.map((alerta, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 + i * 0.1 }}
-                  className="flex items-start gap-3 glass-card-inner p-3"
-                >
-                  <alerta.icon className={`h-4 w-4 mt-0.5 shrink-0 ${
-                    alerta.tipo === "warning" ? "text-accent" : "text-primary"
-                  }`} />
-                  <p className="text-sm text-muted-foreground">{alerta.text}</p>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
+        {/* Alertas — Premium (uses forecast data) */}
+          <PremiumGate inline>
+            <motion.div
+              custom={4}
+              variants={cardVariants}
+              initial="initial"
+              animate="animate"
+              className="glass-card p-6 md:col-span-2"
+            >
+              <h2 className="text-sm font-medium text-muted-foreground mb-4">Pontos de atenção</h2>
+              <div className="space-y-3">
+                {alertas.map((alerta, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 + i * 0.1 }}
+                    className="flex items-start gap-3 glass-card-inner p-3"
+                  >
+                    <alerta.icon className={`h-4 w-4 mt-0.5 shrink-0 ${
+                      alerta.tipo === "warning" ? "text-accent" : "text-primary"
+                    }`} />
+                    <p className="text-sm text-muted-foreground">{alerta.text}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          </PremiumGate>
         </div>
 
         {/* Premium sections */}
