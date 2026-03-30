@@ -201,8 +201,19 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
     if (userError || !user) throw new Error("Unauthorized");
 
+    const userId = user.id;
+    console.log("[SECURITY] Authenticated user for receipt processing:", userId);
+
     const body = await req.json();
     const { mode = "parse", image_base64, image_url, receipt_data, mime_type } = body;
+
+    // SECURITY: Never accept userId from request body — always use JWT-derived value
+    if (body.user_id && body.user_id !== userId) {
+      console.error("[SECURITY] Rejected attempt to use different user_id from body", { jwt_user: userId, body_user: body.user_id });
+      return new Response(JSON.stringify({ error: "Unauthorized: user_id mismatch" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // === MODE: SAVE ===
     if (mode === "save") {
