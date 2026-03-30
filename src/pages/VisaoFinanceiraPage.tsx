@@ -569,8 +569,9 @@ const VisaoFinanceiraPage = () => {
                 </Card>
               </motion.div>
             )}
+            </PremiumGate>
 
-            {/* Chart */}
+            {/* Chart — FREE */}
             <motion.div {...cardAnim(5)} className="glass-card p-6">
               <h2 className="text-sm font-medium text-muted-foreground mb-4">
                 Evolução mês a mês — {selectedYear}
