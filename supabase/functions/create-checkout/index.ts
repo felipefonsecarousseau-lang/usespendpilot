@@ -23,6 +23,13 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_ANON_KEY") ?? ""
   );
 
+  // Service role client to persist stripe_customer_id (bypasses RLS)
+  const supabaseAdmin = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    { auth: { persistSession: false } }
+  );
+
   try {
     const authHeader = req.headers.get("Authorization")!;
     const token = authHeader.replace("Bearer ", "");
@@ -37,6 +44,7 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
+    // Find or reuse existing Stripe customer
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     let customerId: string | undefined;
     if (customers.data.length > 0) {
@@ -54,6 +62,17 @@ serve(async (req) => {
       success_url: `${origin}/premium?success=true`,
       cancel_url: `${origin}/premium?cancelled=true`,
     });
+
+    // Persist stripe_customer_id on user_plans so the webhook can do a direct lookup.
+    // session.customer is set when an existing customer is reused, or will be set
+    // after checkout completes (handled by the webhook). We save it here when available.
+    const resolvedCustomerId = (session.customer as string) || customerId;
+    if (resolvedCustomerId) {
+      await supabaseAdmin
+        .from("user_plans")
+        .update({ stripe_customer_id: resolvedCustomerId })
+        .eq("user_id", user.id);
+    }
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
