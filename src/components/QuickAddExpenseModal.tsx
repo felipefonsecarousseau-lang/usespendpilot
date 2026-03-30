@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { invalidateFinancialData } from "@/lib/invalidateFinancialData";
+import { invalidateDashboardData } from "@/lib/invalidateFinancialData";
+import { logEvent } from "@/lib/logEvent";
 
 const CATEGORIES = [
   { value: "alimentacao", label: "Alimentação" },
@@ -104,15 +105,17 @@ export default function QuickAddExpenseModal({ open, onClose }: QuickAddExpenseM
         tipo_pagamento: tipoPagamento || null,
       });
       if (error) throw error;
+      logEvent("expense:create", { amount: numVal, category: categoria });
       return numVal;
     },
     onSuccess: (savedVal) => {
-      invalidateFinancialData(queryClient);
+      invalidateDashboardData(queryClient);
       toast.success(`R$ ${savedVal.toFixed(2).replace(".", ",")} adicionados ao seu mês`);
       resetForm();
       onClose();
     },
     onError: (err: any) => {
+      logEvent("expense:create_error", { error: err.message });
       toast.error(err.message || "Erro ao salvar gasto");
     },
   });

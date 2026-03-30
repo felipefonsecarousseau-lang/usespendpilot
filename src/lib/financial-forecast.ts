@@ -49,6 +49,19 @@ function fmt(val: number) {
 }
 
 /**
+ * Returns the total value for a receipt.
+ * Prefers summing receipt_items (source of truth).
+ * Falls back to valor_total when items array is empty (e.g. partial OCR failure).
+ */
+function receiptTotal(r: ReceiptRow): number {
+  const items = r.receipt_items ?? [];
+  if (items.length > 0) {
+    return items.reduce((sum, item) => sum + (Number(item.preco_total) || 0), 0);
+  }
+  return Number(r.valor_total) || 0;
+}
+
+/**
  * Generate financial forecasts from receipt history + manual expenses + fixed expenses.
  * @param receipts - Array of receipt rows with nested items
  * @param rendaMensal - Monthly household income
@@ -138,10 +151,7 @@ export function generateForecast(
   const currentReceipts = receipts.filter(
     (r) => monthKey(r.data_compra) === currentMonth
   );
-  let gastoReceiptsMes = currentReceipts.reduce(
-    (s, r) => s + (r.receipt_items ?? []).reduce((si, item) => si + (Number(item.preco_total) || 0), 0),
-    0
-  );
+  let gastoReceiptsMes = currentReceipts.reduce((s, r) => s + receiptTotal(r), 0);
 
   const currentManual = manualExpenses.filter(
     (m) => monthKey(m.data) === currentMonth
@@ -165,10 +175,9 @@ export function generateForecast(
       const fallbackManual = manualExpenses.filter(
         (m) => monthKey(m.data) === mesFallback
       );
-      gastoAtualMes = fallbackReceipts.reduce(
-        (s, r) => s + (r.receipt_items ?? []).reduce((si, item) => si + (Number(item.preco_total) || 0), 0),
-        0
-      ) + fallbackManual.reduce((s, m) => s + (Number(m.valor) || 0), 0);
+      gastoAtualMes =
+        fallbackReceipts.reduce((s, r) => s + receiptTotal(r), 0) +
+        fallbackManual.reduce((s, m) => s + (Number(m.valor) || 0), 0);
     }
   }
 

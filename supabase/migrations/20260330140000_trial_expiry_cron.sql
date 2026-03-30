@@ -5,10 +5,10 @@
 -- Enable pg_cron if not already enabled (run once per project)
 -- create extension if not exists pg_cron;
 
--- Schedule: runs every hour to mark expired trials
+-- Schedule: runs every 6 hours (sufficient precision, lower DB load)
 select cron.schedule(
   'expire-trial-plans',         -- job name
-  '0 * * * *',                  -- every hour at :00
+  '0 */6 * * *',                -- every 6 hours
   $$
     UPDATE user_plans
     SET

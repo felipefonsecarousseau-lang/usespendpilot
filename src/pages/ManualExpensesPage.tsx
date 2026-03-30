@@ -19,6 +19,7 @@ import AppLayout from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFixedExpenseOccurrences, type Occurrence } from "@/hooks/useFixedExpenseOccurrences";
+import { invalidateDashboardData } from "@/lib/invalidateFinancialData";
 
 interface FixedExpense {
   id: string;
@@ -93,9 +94,7 @@ const ManualExpensesPage = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["fixed-expenses"] });
-      queryClient.invalidateQueries({ queryKey: ["fixed-expense-occurrences"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard-fixed-expenses"] });
+      invalidateDashboardData(queryClient);
       toast.success("Conta recorrente adicionada!");
     },
     onError: () => toast.error("Erro ao adicionar conta."),
@@ -108,9 +107,7 @@ const ManualExpensesPage = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["fixed-expenses"] });
-      queryClient.invalidateQueries({ queryKey: ["fixed-expense-occurrences"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard-fixed-expenses"] });
+      invalidateDashboardData(queryClient);
       toast.success("Conta removida definitivamente.");
     },
     onError: () => toast.error("Erro ao remover conta."),
@@ -126,8 +123,7 @@ const ManualExpensesPage = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["fixed-expense-occurrences"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard-fixed-expenses"] });
+      invalidateDashboardData(queryClient);
       toast.success("Removido apenas deste mês.");
     },
     onError: () => toast.error("Erro ao remover ocorrência."),

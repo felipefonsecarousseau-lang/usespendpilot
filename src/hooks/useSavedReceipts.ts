@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { invalidateDashboardData, invalidateInsightsData } from "@/lib/invalidateFinancialData";
 
 export interface SavedReceipt {
   id: string;
@@ -199,11 +200,8 @@ export function useSavedReceipts() {
   });
 
   const invalidateAll = () => {
-    queryClient.invalidateQueries({ queryKey: ["saved-receipts"] });
-    queryClient.invalidateQueries({ queryKey: ["gastos-receipt-items"] });
-    queryClient.invalidateQueries({ queryKey: ["gastos-receipt-items-prev"] });
-    queryClient.invalidateQueries({ queryKey: ["dashboard-receipts"] });
-    queryClient.invalidateQueries({ queryKey: ["dashboard-all-receipts"] });
+    invalidateDashboardData(queryClient);
+    invalidateInsightsData(queryClient);
   };
 
   return { receiptsQuery, fetchReceiptItems, deleteReceipt, updateReceipt };

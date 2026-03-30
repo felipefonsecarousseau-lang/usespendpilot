@@ -10,7 +10,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { normalizeProduct } from "@/lib/product-normalizer";
-import { invalidateFinancialData } from "@/lib/invalidateFinancialData";
+import { invalidateDashboardData, invalidateInsightsData } from "@/lib/invalidateFinancialData";
+import { logEvent } from "@/lib/logEvent";
+import { safeExecute } from "@/lib/safeExecute";
 
 const UNIDADES = ["un", "kg", "g", "L", "mL", "pct", "cx", "dz"];
 
@@ -123,8 +125,8 @@ const InvoiceScanPage = () => {
         setDataCompra(receipt.data_compra || "");
         setWarnings(data.warnings || []);
 
-        setItems(
-          receipt.items.map((item: any) => {
+        const parsedItems = receipt.items.map((item: any) => {
+          return safeExecute(() => {
             const vendaPorPeso = item.venda_por_peso === true;
             const norm = normalizeProduct(
               item.nome_normalizado || item.nome_produto,
@@ -144,8 +146,11 @@ const InvoiceScanPage = () => {
               venda_por_peso: vendaPorPeso,
               preco_por_kg: vendaPorPeso ? item.preco_unitario : (item.preco_por_kg ?? null),
             };
-          })
-        );
+          }, "ocr:item_parse");
+        }).filter(Boolean) as ParsedItem[];
+
+        setItems(parsedItems);
+        logEvent("ocr:success", { itemCount: parsedItems.length, store: receipt.store?.nome });
 
         if (data.warnings?.length > 0) {
           toast.warning(`Nota processada com ${data.warnings.length} ajuste(s). Revise os itens antes de salvar.`);
@@ -153,7 +158,8 @@ const InvoiceScanPage = () => {
           toast.success("Nota lida com sucesso! Revise os itens e salve quando estiver pronto.");
         }
       }
-    } catch (err) {
+    } catch (err: any) {
+      logEvent("ocr:error", { error: err?.message ?? String(err) });
       console.error("OCR error:", err);
       toast.error("Erro ao processar nota fiscal. Tente novamente.");
       resetState();
@@ -193,8 +199,10 @@ const InvoiceScanPage = () => {
       }
 
       setReceiptSaved(true);
+      logEvent("receipt:saved", { itemCount: items.length, store: storeName });
       toast.success("Nota fiscal salva com sucesso!");
-      invalidateFinancialData(queryClient);
+      invalidateDashboardData(queryClient);
+      invalidateInsightsData(queryClient);
     } catch (err) {
       console.error("Save error:", err);
       toast.error("Erro ao salvar nota fiscal. Tente novamente.");
