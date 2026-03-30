@@ -468,7 +468,8 @@ const VisaoFinanceiraPage = () => {
               </motion.div>
             )}
 
-            {/* KPI Cards */}
+            {/* KPI Cards — Premium (projeções e insights) */}
+            <PremiumGate inline>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <motion.div {...cardAnim(1)}>
                 <Card className="bg-card border-border">
