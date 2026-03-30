@@ -670,26 +670,28 @@ const VisaoFinanceiraPage = () => {
               )}
             </motion.div>
 
-            {/* Insights */}
-            {insights.length > 0 && (
-              <motion.div {...cardAnim(6)} className="glass-card p-6">
-                <h2 className="text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2">
-                  <Lightbulb className="h-4 w-4 text-accent" />
-                  Insights
-                </h2>
-                <div className="space-y-3">
-                  {insights.map((insight, i) => (
-                    <div key={i} className={`glass-card-inner p-3 text-sm flex items-start gap-2.5 ${
-                      insight.type === "warning" ? "border-l-2 border-accent" :
-                      insight.type === "success" ? "border-l-2 border-primary" : ""
-                    }`}>
-                      {insightIcon(insight.type)}
-                      <span className="text-muted-foreground">{insight.text}</span>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
+            {/* Insights — Premium */}
+            <PremiumGate inline>
+              {insights.length > 0 && (
+                <motion.div {...cardAnim(6)} className="glass-card p-6">
+                  <h2 className="text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2">
+                    <Lightbulb className="h-4 w-4 text-accent" />
+                    Insights
+                  </h2>
+                  <div className="space-y-3">
+                    {insights.map((insight, i) => (
+                      <div key={i} className={`glass-card-inner p-3 text-sm flex items-start gap-2.5 ${
+                        insight.type === "warning" ? "border-l-2 border-accent" :
+                        insight.type === "success" ? "border-l-2 border-primary" : ""
+                      }`}>
+                        {insightIcon(insight.type)}
+                        <span className="text-muted-foreground">{insight.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </PremiumGate>
 
             {/* No income hint */}
             {rendaMensal === 0 && (
