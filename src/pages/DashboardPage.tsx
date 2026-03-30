@@ -306,66 +306,67 @@ const DashboardPage = () => {
         {/* Fixed expenses summary */}
         <FixedExpensesDashboardCard total={fixedTotals.total} paid={fixedTotals.paid} pending={fixedTotals.pending} />
 
-        {/* Forecast cards */}
+        {/* Forecast cards — Premium only */}
         {hasData && rendaMensal > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {/* Score card */}
-            <motion.div custom={0} variants={cardVariants} initial="initial" animate="animate" className="glass-card p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Activity className="h-4 w-4 text-primary" />
-                <span className="text-xs text-muted-foreground">Score Financeiro</span>
-              </div>
-              <div className="flex items-baseline gap-2">
-                <p className={`text-2xl font-bold font-mono ${SCORE_COLORS[financialScore.nivel]}`}>
-                  {financialScore.score}
+          <PremiumGate inline>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Score card */}
+              <motion.div custom={0} variants={cardVariants} initial="initial" animate="animate" className="glass-card p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Activity className="h-4 w-4 text-primary" />
+                  <span className="text-xs text-muted-foreground">Score Financeiro</span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <p className={`text-2xl font-bold font-mono ${SCORE_COLORS[financialScore.nivel]}`}>
+                    {financialScore.score}
+                  </p>
+                  <span className={`text-xs ${SCORE_COLORS[financialScore.nivel]}`}>
+                    {SCORE_LABELS[financialScore.nivel]}
+                  </span>
+                </div>
+                <div className="w-full h-1.5 rounded-full bg-muted mt-2">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      financialScore.nivel === "excelente" || financialScore.nivel === "bom"
+                        ? "bg-primary"
+                        : financialScore.nivel === "alerta"
+                          ? "bg-accent"
+                          : "bg-destructive"
+                    }`}
+                    style={{ width: `${financialScore.score}%` }}
+                  />
+                </div>
+              </motion.div>
+
+              <motion.div custom={1} variants={cardVariants} initial="initial" animate="animate" className="glass-card p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Wallet className="h-4 w-4 text-primary" />
+                  <span className="text-xs text-muted-foreground">Saldo previsto</span>
+                </div>
+                <p className={`text-xl font-bold font-mono ${forecast.saldo_previsto < 0 ? "text-accent" : "text-primary"}`}>
+                  {formatCurrencySimple(forecast.saldo_previsto)}
                 </p>
-                <span className={`text-xs ${SCORE_COLORS[financialScore.nivel]}`}>
-                  {SCORE_LABELS[financialScore.nivel]}
-                </span>
-              </div>
-              {/* Mini progress bar */}
-              <div className="w-full h-1.5 rounded-full bg-muted mt-2">
-                <div
-                  className={`h-full rounded-full transition-all ${
-                    financialScore.nivel === "excelente" || financialScore.nivel === "bom"
-                      ? "bg-primary"
-                      : financialScore.nivel === "alerta"
-                        ? "bg-accent"
-                        : "bg-destructive"
-                  }`}
-                  style={{ width: `${financialScore.score}%` }}
-                />
-              </div>
-            </motion.div>
+              </motion.div>
 
-            <motion.div custom={1} variants={cardVariants} initial="initial" animate="animate" className="glass-card p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Wallet className="h-4 w-4 text-primary" />
-                <span className="text-xs text-muted-foreground">Saldo previsto</span>
-              </div>
-              <p className={`text-xl font-bold font-mono ${forecast.saldo_previsto < 0 ? "text-accent" : "text-primary"}`}>
-                {formatCurrencySimple(forecast.saldo_previsto)}
-              </p>
-            </motion.div>
+              <motion.div custom={2} variants={cardVariants} initial="initial" animate="animate" className="glass-card p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Target className="h-4 w-4 text-primary" />
+                  <span className="text-xs text-muted-foreground">Média diária</span>
+                </div>
+                <p className="text-xl font-bold font-mono text-foreground">
+                  {formatCurrencySimple(forecast.media_diaria_atual)}
+                </p>
+              </motion.div>
 
-            <motion.div custom={2} variants={cardVariants} initial="initial" animate="animate" className="glass-card p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Target className="h-4 w-4 text-primary" />
-                <span className="text-xs text-muted-foreground">Média diária</span>
-              </div>
-              <p className="text-xl font-bold font-mono text-foreground">
-                {formatCurrencySimple(forecast.media_diaria_atual)}
-              </p>
-            </motion.div>
-
-            <motion.div custom={3} variants={cardVariants} initial="initial" animate="animate" className="glass-card p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Calendar className="h-4 w-4 text-primary" />
-                <span className="text-xs text-muted-foreground">Dias restantes</span>
-              </div>
-              <p className="text-xl font-bold font-mono text-foreground">{forecast.dias_restantes}</p>
-            </motion.div>
-          </div>
+              <motion.div custom={3} variants={cardVariants} initial="initial" animate="animate" className="glass-card p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Calendar className="h-4 w-4 text-primary" />
+                  <span className="text-xs text-muted-foreground">Dias restantes</span>
+                </div>
+                <p className="text-xl font-bold font-mono text-foreground">{forecast.dias_restantes}</p>
+              </motion.div>
+            </div>
+          </PremiumGate>
         )}
 
         <div className="grid md:grid-cols-5 gap-6">
