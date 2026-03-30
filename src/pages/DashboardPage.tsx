@@ -306,66 +306,67 @@ const DashboardPage = () => {
         {/* Fixed expenses summary */}
         <FixedExpensesDashboardCard total={fixedTotals.total} paid={fixedTotals.paid} pending={fixedTotals.pending} />
 
-        {/* Forecast cards */}
+        {/* Forecast cards — Premium only */}
         {hasData && rendaMensal > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {/* Score card */}
-            <motion.div custom={0} variants={cardVariants} initial="initial" animate="animate" className="glass-card p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Activity className="h-4 w-4 text-primary" />
-                <span className="text-xs text-muted-foreground">Score Financeiro</span>
-              </div>
-              <div className="flex items-baseline gap-2">
-                <p className={`text-2xl font-bold font-mono ${SCORE_COLORS[financialScore.nivel]}`}>
-                  {financialScore.score}
+          <PremiumGate inline>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Score card */}
+              <motion.div custom={0} variants={cardVariants} initial="initial" animate="animate" className="glass-card p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Activity className="h-4 w-4 text-primary" />
+                  <span className="text-xs text-muted-foreground">Score Financeiro</span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <p className={`text-2xl font-bold font-mono ${SCORE_COLORS[financialScore.nivel]}`}>
+                    {financialScore.score}
+                  </p>
+                  <span className={`text-xs ${SCORE_COLORS[financialScore.nivel]}`}>
+                    {SCORE_LABELS[financialScore.nivel]}
+                  </span>
+                </div>
+                <div className="w-full h-1.5 rounded-full bg-muted mt-2">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      financialScore.nivel === "excelente" || financialScore.nivel === "bom"
+                        ? "bg-primary"
+                        : financialScore.nivel === "alerta"
+                          ? "bg-accent"
+                          : "bg-destructive"
+                    }`}
+                    style={{ width: `${financialScore.score}%` }}
+                  />
+                </div>
+              </motion.div>
+
+              <motion.div custom={1} variants={cardVariants} initial="initial" animate="animate" className="glass-card p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Wallet className="h-4 w-4 text-primary" />
+                  <span className="text-xs text-muted-foreground">Saldo previsto</span>
+                </div>
+                <p className={`text-xl font-bold font-mono ${forecast.saldo_previsto < 0 ? "text-accent" : "text-primary"}`}>
+                  {formatCurrencySimple(forecast.saldo_previsto)}
                 </p>
-                <span className={`text-xs ${SCORE_COLORS[financialScore.nivel]}`}>
-                  {SCORE_LABELS[financialScore.nivel]}
-                </span>
-              </div>
-              {/* Mini progress bar */}
-              <div className="w-full h-1.5 rounded-full bg-muted mt-2">
-                <div
-                  className={`h-full rounded-full transition-all ${
-                    financialScore.nivel === "excelente" || financialScore.nivel === "bom"
-                      ? "bg-primary"
-                      : financialScore.nivel === "alerta"
-                        ? "bg-accent"
-                        : "bg-destructive"
-                  }`}
-                  style={{ width: `${financialScore.score}%` }}
-                />
-              </div>
-            </motion.div>
+              </motion.div>
 
-            <motion.div custom={1} variants={cardVariants} initial="initial" animate="animate" className="glass-card p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Wallet className="h-4 w-4 text-primary" />
-                <span className="text-xs text-muted-foreground">Saldo previsto</span>
-              </div>
-              <p className={`text-xl font-bold font-mono ${forecast.saldo_previsto < 0 ? "text-accent" : "text-primary"}`}>
-                {formatCurrencySimple(forecast.saldo_previsto)}
-              </p>
-            </motion.div>
+              <motion.div custom={2} variants={cardVariants} initial="initial" animate="animate" className="glass-card p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Target className="h-4 w-4 text-primary" />
+                  <span className="text-xs text-muted-foreground">Média diária</span>
+                </div>
+                <p className="text-xl font-bold font-mono text-foreground">
+                  {formatCurrencySimple(forecast.media_diaria_atual)}
+                </p>
+              </motion.div>
 
-            <motion.div custom={2} variants={cardVariants} initial="initial" animate="animate" className="glass-card p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Target className="h-4 w-4 text-primary" />
-                <span className="text-xs text-muted-foreground">Média diária</span>
-              </div>
-              <p className="text-xl font-bold font-mono text-foreground">
-                {formatCurrencySimple(forecast.media_diaria_atual)}
-              </p>
-            </motion.div>
-
-            <motion.div custom={3} variants={cardVariants} initial="initial" animate="animate" className="glass-card p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Calendar className="h-4 w-4 text-primary" />
-                <span className="text-xs text-muted-foreground">Dias restantes</span>
-              </div>
-              <p className="text-xl font-bold font-mono text-foreground">{forecast.dias_restantes}</p>
-            </motion.div>
-          </div>
+              <motion.div custom={3} variants={cardVariants} initial="initial" animate="animate" className="glass-card p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Calendar className="h-4 w-4 text-primary" />
+                  <span className="text-xs text-muted-foreground">Dias restantes</span>
+                </div>
+                <p className="text-xl font-bold font-mono text-foreground">{forecast.dias_restantes}</p>
+              </motion.div>
+            </div>
+          </PremiumGate>
         )}
 
         <div className="grid md:grid-cols-5 gap-6">
@@ -422,32 +423,34 @@ const DashboardPage = () => {
             )}
           </motion.div>
 
-          {/* Alertas */}
-          <motion.div
-            custom={4}
-            variants={cardVariants}
-            initial="initial"
-            animate="animate"
-            className="glass-card p-6 md:col-span-2"
-          >
-            <h2 className="text-sm font-medium text-muted-foreground mb-4">Pontos de atenção</h2>
-            <div className="space-y-3">
-              {alertas.map((alerta, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 + i * 0.1 }}
-                  className="flex items-start gap-3 glass-card-inner p-3"
-                >
-                  <alerta.icon className={`h-4 w-4 mt-0.5 shrink-0 ${
-                    alerta.tipo === "warning" ? "text-accent" : "text-primary"
-                  }`} />
-                  <p className="text-sm text-muted-foreground">{alerta.text}</p>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
+        {/* Alertas — Premium (uses forecast data) */}
+          <PremiumGate inline>
+            <motion.div
+              custom={4}
+              variants={cardVariants}
+              initial="initial"
+              animate="animate"
+              className="glass-card p-6 md:col-span-2"
+            >
+              <h2 className="text-sm font-medium text-muted-foreground mb-4">Pontos de atenção</h2>
+              <div className="space-y-3">
+                {alertas.map((alerta, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 + i * 0.1 }}
+                    className="flex items-start gap-3 glass-card-inner p-3"
+                  >
+                    <alerta.icon className={`h-4 w-4 mt-0.5 shrink-0 ${
+                      alerta.tipo === "warning" ? "text-accent" : "text-primary"
+                    }`} />
+                    <p className="text-sm text-muted-foreground">{alerta.text}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          </PremiumGate>
         </div>
 
         {/* Premium sections */}
@@ -499,8 +502,10 @@ const DashboardPage = () => {
           {hasData && <FinancialAdvisorCard recommendations={recommendations} />}
         </PremiumGate>
 
-        {/* Advanced Insights — always visible */}
-        <AdvancedInsightsCard insights={advancedInsights} />
+        {/* Advanced Insights — Premium only */}
+        <PremiumGate inline>
+          <AdvancedInsightsCard insights={advancedInsights} />
+        </PremiumGate>
       </div>
     </AppLayout>
   );

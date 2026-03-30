@@ -13,6 +13,7 @@ import {
   ArrowUpRight, ArrowDownRight, Wallet, AlertTriangle, Banknote, PiggyBank, ShieldAlert,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import PremiumGate from "@/components/PremiumGate";
 
 const MONTH_LABELS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
@@ -467,7 +468,8 @@ const VisaoFinanceiraPage = () => {
               </motion.div>
             )}
 
-            {/* KPI Cards */}
+            {/* KPI Cards — Premium (projeções e insights) */}
+            <PremiumGate inline>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <motion.div {...cardAnim(1)}>
                 <Card className="bg-card border-border">
@@ -567,8 +569,9 @@ const VisaoFinanceiraPage = () => {
                 </Card>
               </motion.div>
             )}
+            </PremiumGate>
 
-            {/* Chart */}
+            {/* Chart — FREE */}
             <motion.div {...cardAnim(5)} className="glass-card p-6">
               <h2 className="text-sm font-medium text-muted-foreground mb-4">
                 Evolução mês a mês — {selectedYear}
@@ -667,26 +670,28 @@ const VisaoFinanceiraPage = () => {
               )}
             </motion.div>
 
-            {/* Insights */}
-            {insights.length > 0 && (
-              <motion.div {...cardAnim(6)} className="glass-card p-6">
-                <h2 className="text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2">
-                  <Lightbulb className="h-4 w-4 text-accent" />
-                  Insights
-                </h2>
-                <div className="space-y-3">
-                  {insights.map((insight, i) => (
-                    <div key={i} className={`glass-card-inner p-3 text-sm flex items-start gap-2.5 ${
-                      insight.type === "warning" ? "border-l-2 border-accent" :
-                      insight.type === "success" ? "border-l-2 border-primary" : ""
-                    }`}>
-                      {insightIcon(insight.type)}
-                      <span className="text-muted-foreground">{insight.text}</span>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
+            {/* Insights — Premium */}
+            <PremiumGate inline>
+              {insights.length > 0 && (
+                <motion.div {...cardAnim(6)} className="glass-card p-6">
+                  <h2 className="text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2">
+                    <Lightbulb className="h-4 w-4 text-accent" />
+                    Insights
+                  </h2>
+                  <div className="space-y-3">
+                    {insights.map((insight, i) => (
+                      <div key={i} className={`glass-card-inner p-3 text-sm flex items-start gap-2.5 ${
+                        insight.type === "warning" ? "border-l-2 border-accent" :
+                        insight.type === "success" ? "border-l-2 border-primary" : ""
+                      }`}>
+                        {insightIcon(insight.type)}
+                        <span className="text-muted-foreground">{insight.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </PremiumGate>
 
             {/* No income hint */}
             {rendaMensal === 0 && (
