@@ -13,6 +13,7 @@ import {
   ArrowUpRight, ArrowDownRight, Wallet, AlertTriangle, Banknote, PiggyBank, ShieldAlert,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import PremiumGate from "@/components/PremiumGate";
 
 const MONTH_LABELS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
