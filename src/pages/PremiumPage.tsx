@@ -5,7 +5,7 @@ import { Crown, Check, Sparkles, Brain, TrendingUp, BarChart3, ShoppingCart, Lig
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import AppLayout from "@/components/AppLayout";
-import { useSubscriptionDetails } from "@/hooks/usePremiumStatus";
+import { useSubscriptionDetails, useFullPlanStatus } from "@/hooks/usePremiumStatus";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -25,11 +25,13 @@ const PremiumPage = () => {
   const [cycle, setCycle] = useState<Cycle>("monthly");
   const [loading, setLoading] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
-  const { data: subscription, isLoading } = useSubscriptionDetails();
+  const { data: planStatus, isLoading } = useFullPlanStatus();
+  const { data: subscription } = useSubscriptionDetails();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
 
-  const isPremium = subscription?.subscribed ?? false;
+  // Recognize trial, manual premium, and Stripe subscriptions
+  const isPremium = planStatus?.isPremium ?? false;
 
   useEffect(() => {
     if (searchParams.get("success") === "true") {
@@ -137,9 +139,14 @@ const PremiumPage = () => {
                 <Check className="h-6 w-6" />
                 Você é Premium!
               </div>
-              {subscription?.subscription_end && (
+              {planStatus?.isTrial && planStatus.trialDaysLeft !== null && (
                 <p className="text-sm text-muted-foreground">
-                  Próxima renovação: {new Date(subscription.subscription_end).toLocaleDateString("pt-BR")}
+                  Trial ativo — {planStatus.trialDaysLeft} dia{planStatus.trialDaysLeft !== 1 ? "s" : ""} restante{planStatus.trialDaysLeft !== 1 ? "s" : ""}
+                </p>
+              )}
+              {!planStatus?.isTrial && planStatus?.subscriptionEnd && (
+                <p className="text-sm text-muted-foreground">
+                  Próxima renovação: {new Date(planStatus.subscriptionEnd).toLocaleDateString("pt-BR")}
                 </p>
               )}
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">

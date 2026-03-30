@@ -25,7 +25,7 @@ export interface FinancialForecast {
 }
 
 interface ReceiptRow {
-  valor_total: number;
+  valor_total?: number; // kept for compatibility, not used in calculations
   data_compra: string;
   receipt_items: { categoria: string; preco_total: number }[];
 }
@@ -139,7 +139,7 @@ export function generateForecast(
     (r) => monthKey(r.data_compra) === currentMonth
   );
   let gastoReceiptsMes = currentReceipts.reduce(
-    (s, r) => s + r.valor_total,
+    (s, r) => s + (r.receipt_items ?? []).reduce((si, item) => si + (Number(item.preco_total) || 0), 0),
     0
   );
 
@@ -165,8 +165,10 @@ export function generateForecast(
       const fallbackManual = manualExpenses.filter(
         (m) => monthKey(m.data) === mesFallback
       );
-      gastoAtualMes = fallbackReceipts.reduce((s, r) => s + r.valor_total, 0) +
-        fallbackManual.reduce((s, m) => s + (Number(m.valor) || 0), 0);
+      gastoAtualMes = fallbackReceipts.reduce(
+        (s, r) => s + (r.receipt_items ?? []).reduce((si, item) => si + (Number(item.preco_total) || 0), 0),
+        0
+      ) + fallbackManual.reduce((s, m) => s + (Number(m.valor) || 0), 0);
     }
   }
 

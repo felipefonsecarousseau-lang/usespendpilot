@@ -5,6 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import AppLayout from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -44,6 +54,7 @@ const ManualExpensesPage = () => {
   const [valor, setValor] = useState("");
   const [diaRecorrente, setDiaRecorrente] = useState<number>(1);
   const [categoria, setCategoria] = useState(categorias[0]);
+  const [deleteTarget, setDeleteTarget] = useState<Occurrence | null>(null);
   const queryClient = useQueryClient();
 
   // Fetch base fixed expenses (for adding new ones)
@@ -90,6 +101,7 @@ const ManualExpensesPage = () => {
     onError: () => toast.error("Erro ao adicionar conta."),
   });
 
+  // Deletes the fixed_expense permanently (all future months)
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("fixed_expenses").delete().eq("id", id);
@@ -99,9 +111,26 @@ const ManualExpensesPage = () => {
       queryClient.invalidateQueries({ queryKey: ["fixed-expenses"] });
       queryClient.invalidateQueries({ queryKey: ["fixed-expense-occurrences"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-fixed-expenses"] });
-      toast.success("Conta removida.");
+      toast.success("Conta removida definitivamente.");
     },
     onError: () => toast.error("Erro ao remover conta."),
+  });
+
+  // Deletes only this month's occurrence (keeps the recurring expense)
+  const deleteOccurrenceMutation = useMutation({
+    mutationFn: async (occurrenceId: string) => {
+      const { error } = await supabase
+        .from("fixed_expense_occurrences")
+        .delete()
+        .eq("id", occurrenceId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["fixed-expense-occurrences"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-fixed-expenses"] });
+      toast.success("Removido apenas deste mês.");
+    },
+    onError: () => toast.error("Erro ao remover ocorrência."),
   });
 
   // Alerts for upcoming due dates
@@ -306,7 +335,7 @@ const ManualExpensesPage = () => {
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-mono">{formatCurrency(Number(occ.valor))}</span>
                         <button
-                          onClick={() => deleteMutation.mutate(occ.fixed_expense_id)}
+                          onClick={() => setDeleteTarget(occ)}
                           className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -351,7 +380,7 @@ const ManualExpensesPage = () => {
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-mono">{formatCurrency(Number(occ.valor))}</span>
                         <button
-                          onClick={() => deleteMutation.mutate(occ.fixed_expense_id)}
+                          onClick={() => setDeleteTarget(occ)}
                           className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -365,6 +394,39 @@ const ManualExpensesPage = () => {
           </div>
         )}
       </div>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir "{deleteTarget?.nome}"</AlertDialogTitle>
+            <AlertDialogDescription>
+              Como você deseja excluir esta conta recorrente?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (deleteTarget) deleteOccurrenceMutation.mutate(deleteTarget.id);
+                setDeleteTarget(null);
+              }}
+            >
+              Excluir apenas este mês
+            </Button>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteTarget) deleteMutation.mutate(deleteTarget.fixed_expense_id);
+                setDeleteTarget(null);
+              }}
+            >
+              Excluir definitivamente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 };

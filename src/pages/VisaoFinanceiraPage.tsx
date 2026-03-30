@@ -172,7 +172,7 @@ const VisaoFinanceiraPage = () => {
     for (const item of receiptItems as any[]) {
       const date = item.receipts?.data_compra;
       if (!date) continue;
-      const m = new Date(date + "T00:00:00").getMonth();
+      const m = new Date(date + "T12:00:00").getMonth();
       const v = Number(item.preco_total) || 0;
       if (v <= 0) continue;
       const cat = item.categoria || "outros";
@@ -181,7 +181,7 @@ const VisaoFinanceiraPage = () => {
     }
 
     for (const me of manualExpenses as any[]) {
-      const m = new Date(me.data + "T00:00:00").getMonth();
+      const m = new Date(me.data + "T12:00:00").getMonth();
       const v = Number(me.valor) || 0;
       if (v <= 0) continue;
       const cat = (me.categoria || "outros").toLowerCase();
@@ -190,7 +190,7 @@ const VisaoFinanceiraPage = () => {
     }
 
     for (const occ of fixedOccurrences as any[]) {
-      const m = new Date(occ.mes + "T00:00:00").getMonth();
+      const m = new Date(occ.mes + "T12:00:00").getMonth();
       const v = Number(occ.valor) || 0;
       if (v <= 0) continue;
       months[m].total += v;

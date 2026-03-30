@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { TrendingUp, AlertTriangle, Calendar, Wallet, Target, TrendingDown, Activity } from "lucide-react";
@@ -102,9 +102,12 @@ const DashboardPage = () => {
   const { data: receipts = [] } = useQuery({
     queryKey: ["dashboard-receipts", currentMonthStart],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
       const { data, error } = await supabase
         .from("receipts")
         .select("valor_total, data_compra, store_id, stores(nome), receipt_items(categoria, preco_total, nome_normalizado, preco_unitario)")
+        .eq("user_id", user.id)
         .gte("data_compra", currentMonthStart)
         .lt("data_compra", nextMonthStart)
         .order("data_compra", { ascending: false });
@@ -117,9 +120,12 @@ const DashboardPage = () => {
   const { data: manualExpenses = [] } = useQuery({
     queryKey: ["dashboard-manual-expenses", currentMonthStart],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
       const { data, error } = await supabase
         .from("manual_expenses")
         .select("valor, categoria, nome, data")
+        .eq("user_id", user.id)
         .gte("data", currentMonthStart)
         .lt("data", nextMonthStart);
       if (error) throw error;
@@ -131,9 +137,12 @@ const DashboardPage = () => {
   const { data: allReceipts = [] } = useQuery({
     queryKey: ["dashboard-all-receipts"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
       const { data, error } = await supabase
         .from("receipts")
         .select("valor_total, data_compra, store_id, stores(nome), receipt_items(categoria, preco_total, nome_normalizado, preco_unitario)")
+        .eq("user_id", user.id)
         .order("data_compra", { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -144,9 +153,12 @@ const DashboardPage = () => {
   const { data: allManualExpenses = [] } = useQuery({
     queryKey: ["dashboard-all-manual-expenses"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
       const { data, error } = await supabase
         .from("manual_expenses")
         .select("valor, categoria, nome, data")
+        .eq("user_id", user.id)
         .order("data", { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -157,9 +169,12 @@ const DashboardPage = () => {
   const { data: familyMembers = [] } = useQuery({
     queryKey: ["dashboard-family"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
       const { data, error } = await supabase
         .from("family_members")
-        .select("renda_mensal");
+        .select("renda_mensal")
+        .eq("user_id", user.id);
       if (error) throw error;
       return data ?? [];
     },
@@ -305,6 +320,21 @@ const DashboardPage = () => {
 
         {/* Fixed expenses summary */}
         <FixedExpensesDashboardCard total={fixedTotals.total} paid={fixedTotals.paid} pending={fixedTotals.pending} />
+
+        {/* No income nudge — show when user has expenses but no income set */}
+        {hasData && rendaMensal === 0 && (
+          <div className="glass-card p-4 flex items-center gap-3">
+            <Wallet className="h-5 w-5 text-muted-foreground shrink-0" />
+            <div>
+              <p className="text-sm text-muted-foreground">
+                Adicione sua renda para desbloquear previsões e insights financeiros.
+              </p>
+              <Link to="/family" className="text-xs text-primary underline underline-offset-2 mt-0.5 inline-block">
+                Adicionar renda →
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* Forecast cards — Premium only */}
         {hasData && rendaMensal > 0 && (

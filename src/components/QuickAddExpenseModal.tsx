@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { invalidateFinancialData } from "@/lib/invalidateFinancialData";
 
 const CATEGORIES = [
   { value: "alimentacao", label: "Alimentação" },
@@ -106,8 +107,7 @@ export default function QuickAddExpenseModal({ open, onClose }: QuickAddExpenseM
       return numVal;
     },
     onSuccess: (savedVal) => {
-      queryClient.invalidateQueries({ queryKey: ["dashboard-manual-expenses"] });
-      queryClient.invalidateQueries({ queryKey: ["gastos-manual-expenses"] });
+      invalidateFinancialData(queryClient);
       toast.success(`R$ ${savedVal.toFixed(2).replace(".", ",")} adicionados ao seu mês`);
       resetForm();
       onClose();

@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { normalizeProduct } from "@/lib/product-normalizer";
+import { invalidateFinancialData } from "@/lib/invalidateFinancialData";
 
 const UNIDADES = ["un", "kg", "g", "L", "mL", "pct", "cx", "dz"];
 
@@ -193,13 +194,7 @@ const InvoiceScanPage = () => {
 
       setReceiptSaved(true);
       toast.success("Nota fiscal salva com sucesso!");
-
-      // Invalidate queries
-      queryClient.invalidateQueries({ queryKey: ["gastos-receipt-items"] });
-      queryClient.invalidateQueries({ queryKey: ["gastos-receipt-items-prev"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard-receipts"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard-all-receipts"] });
-      queryClient.invalidateQueries({ queryKey: ["saved-receipts"] });
+      invalidateFinancialData(queryClient);
     } catch (err) {
       console.error("Save error:", err);
       toast.error("Erro ao salvar nota fiscal. Tente novamente.");
