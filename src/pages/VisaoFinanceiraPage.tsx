@@ -305,20 +305,20 @@ const VisaoFinanceiraPage = () => {
     const msgs: { text: string; type: "info" | "warning" | "success" }[] = [];
 
     // Income-based insights
-    if (rendaMensal > 0) {
+    if (rendaMesAtual > 0) {
       if (percentComprometido > 100) {
         msgs.push({
-          text: `⚠️ Seus gastos este mês (${fmtShort(currentMonthTotal)}) ultrapassam sua renda (${fmtShort(rendaMensal)}). Você está gastando ${(percentComprometido - 100).toFixed(0)}% a mais do que ganha.`,
+          text: `⚠️ Seus gastos este mês (${fmtShort(currentMonthTotal)}) ultrapassam suas entradas (${fmtShort(rendaMesAtual)}). Você está gastando ${(percentComprometido - 100).toFixed(0)}% a mais do que ganha.`,
           type: "warning",
         });
       } else if (percentComprometido > 85) {
         msgs.push({
-          text: `Atenção: ${percentComprometido.toFixed(0)}% da sua renda já está comprometida este mês. Sobram apenas ${fmtShort(saldoMesAtual)}.`,
+          text: `Atenção: ${percentComprometido.toFixed(0)}% das suas entradas já estão comprometidas este mês. Sobram apenas ${fmtShort(saldoMesAtual)}.`,
           type: "warning",
         });
       } else if (percentComprometido > 0 && percentComprometido <= 60) {
         msgs.push({
-          text: `Ótimo controle! Você comprometeu apenas ${percentComprometido.toFixed(0)}% da renda. Sobram ${fmtShort(saldoMesAtual)} este mês.`,
+          text: `Ótimo controle! Você comprometeu apenas ${percentComprometido.toFixed(0)}% das entradas. Sobram ${fmtShort(saldoMesAtual)} este mês.`,
           type: "success",
         });
       }
@@ -329,9 +329,9 @@ const VisaoFinanceiraPage = () => {
         const sortedCats = Object.entries(currentCats).sort((a, b) => b[1] - a[1]);
         if (sortedCats.length > 0) {
           const [topCat, topVal] = sortedCats[0];
-          const topPct = rendaMensal > 0 ? ((topVal / rendaMensal) * 100).toFixed(0) : "0";
+          const topPct = rendaMesAtual > 0 ? ((topVal / rendaMesAtual) * 100).toFixed(0) : "0";
           msgs.push({
-            text: `A categoria "${topCat}" representa ${topPct}% da sua renda (${fmtShort(topVal)}). Considere reduzir para melhorar o saldo.`,
+            text: `A categoria "${topCat}" representa ${topPct}% das suas entradas (${fmtShort(topVal)}). Considere reduzir para melhorar o saldo.`,
             type: "info",
           });
         }
@@ -367,7 +367,7 @@ const VisaoFinanceiraPage = () => {
       });
     }
     return msgs;
-  }, [mediaMensal, projecaoAnual, monthVariation, prevMonthTotal, prevYearTotal, yearVariation, yearNum, rendaMensal, percentComprometido, currentMonthTotal, saldoMesAtual, monthlyData, currentMonthIndex, monthsWithData.length]);
+  }, [mediaMensal, projecaoAnual, monthVariation, prevMonthTotal, prevYearTotal, yearVariation, yearNum, rendaMesAtual, percentComprometido, currentMonthTotal, saldoMesAtual, monthlyData, currentMonthIndex, monthsWithData.length]);
 
   const cardAnim = (i: number) => ({
     initial: { opacity: 0, y: 20 },
@@ -429,7 +429,7 @@ const VisaoFinanceiraPage = () => {
         ) : (
           <>
             {/* ─── Income vs Expenses Summary ─── */}
-            {rendaMensal > 0 && (
+            {rendaMesAtual > 0 && (
               <motion.div {...cardAnim(0)} className="glass-card p-6">
                 <h2 className="text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2">
                   <Banknote className="h-4 w-4 text-primary" />
@@ -437,8 +437,13 @@ const VisaoFinanceiraPage = () => {
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                   <div className="text-center p-3 rounded-xl bg-primary/5 border border-primary/10">
-                    <p className="text-xs text-muted-foreground mb-1">Renda mensal</p>
-                    <p className="text-xl font-bold font-mono text-primary">{fmtShort(rendaMensal)}</p>
+                    <p className="text-xs text-muted-foreground mb-1">Total de entradas</p>
+                    <p className="text-xl font-bold font-mono text-primary">{fmtShort(rendaMesAtual)}</p>
+                    {rendaVariavelMesAtual > 0 && (
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        Fixo {fmtShort(rendaMensal)} + Var. {fmtShort(rendaVariavelMesAtual)}
+                      </p>
+                    )}
                   </div>
                   <div className="text-center p-3 rounded-xl bg-accent/5 border border-accent/10">
                     <p className="text-xs text-muted-foreground mb-1">Gastos este mês</p>
@@ -487,17 +492,30 @@ const VisaoFinanceiraPage = () => {
                 </div>
 
                 {/* Income breakdown */}
-                {familyMembers.length > 1 && (
-                  <div className="mt-4 pt-4 border-t border-border">
-                    <p className="text-xs text-muted-foreground mb-2">Composição da renda familiar</p>
-                    <div className="space-y-1.5">
-                      {familyMembers.map((m, i) => (
-                        <div key={i} className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">{m.nome} <span className="text-xs opacity-60">({m.papel})</span></span>
-                          <span className="font-mono text-foreground">{fmtShort(Number(m.renda_mensal))}</span>
+                {(familyMembers.length > 1 || rendaVariavelMesAtual > 0) && (
+                  <div className="mt-4 pt-4 border-t border-border space-y-3">
+                    {familyMembers.length > 0 && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1.5">Renda fixa</p>
+                        <div className="space-y-1.5">
+                          {familyMembers.map((m, i) => (
+                            <div key={i} className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">{m.nome} <span className="text-xs opacity-60">({m.papel})</span></span>
+                              <span className="font-mono text-foreground">{fmtShort(Number(m.renda_mensal))}</span>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    )}
+                    {rendaVariavelMesAtual > 0 && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1.5">Ganhos variáveis</p>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Entradas extras do mês</span>
+                          <span className="font-mono text-green-500">+{fmtShort(rendaVariavelMesAtual)}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </motion.div>
@@ -586,8 +604,13 @@ const VisaoFinanceiraPage = () => {
                     </div>
                     <div className="grid grid-cols-3 gap-4 text-center">
                       <div>
-                        <p className="text-xs text-muted-foreground">Renda projetada</p>
+                        <p className="text-xs text-muted-foreground">Total de entradas</p>
                         <p className="text-lg font-bold font-mono text-primary">{fmtShort(rendaAnual)}</p>
+                        {totalVariableYear > 0 && (
+                          <p className="text-[10px] text-muted-foreground mt-0.5">
+                            incl. {fmtShort(totalVariableYear)} variável
+                          </p>
+                        )}
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground">Gastos acumulados</p>
@@ -611,7 +634,7 @@ const VisaoFinanceiraPage = () => {
               <h2 className="text-sm font-medium text-muted-foreground mb-4">
                 Evolução mês a mês — {selectedYear}
                 {rendaMensal > 0 && viewMode === "total" && (
-                  <span className="text-xs ml-2 opacity-60">(linha tracejada = renda mensal)</span>
+                  <span className="text-xs ml-2 opacity-60">(vermelho = acima das entradas)</span>
                 )}
               </h2>
               <div className="h-72">
@@ -632,7 +655,7 @@ const VisaoFinanceiraPage = () => {
                             <Cell
                               key={i}
                               fill={
-                                entry.total > rendaMensal && rendaMensal > 0
+                                entry.total > entry.renda && entry.renda > 0
                                   ? "hsl(0, 84%, 60%)"
                                   : i === currentMonthIndex && yearNum === now.getFullYear()
                                     ? "hsl(160, 84%, 39%)"
