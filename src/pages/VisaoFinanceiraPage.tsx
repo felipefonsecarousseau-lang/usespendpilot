@@ -232,10 +232,12 @@ const VisaoFinanceiraPage = () => {
       month: MONTH_LABELS[i],
       monthIndex: i,
       total: Math.round(months[i].total * 100) / 100,
-      renda: rendaMensal,
+      renda: rendaMensal + (variableIncomeByMonth[i] || 0),
+      rendaFixa: rendaMensal,
+      rendaVariavel: variableIncomeByMonth[i] || 0,
       cats: months[i].cats,
     }));
-  }, [receiptItems, manualExpenses, fixedOccurrences, rendaMensal]);
+  }, [receiptItems, manualExpenses, fixedOccurrences, rendaMensal, variableIncomeByMonth]);
 
   // ─── Previous year total ───
   const prevYearTotal = useMemo(() => {
@@ -267,9 +269,11 @@ const VisaoFinanceiraPage = () => {
     : 0;
 
   // ─── Income vs expenses ───
-  const rendaAnual = rendaMensal * 12;
-  const saldoMesAtual = rendaMensal - currentMonthTotal;
-  const percentComprometido = rendaMensal > 0 ? (currentMonthTotal / rendaMensal) * 100 : 0;
+  const rendaMesAtual = monthlyData[currentMonthIndex]?.renda || rendaMensal;
+  const rendaVariavelMesAtual = monthlyData[currentMonthIndex]?.rendaVariavel || 0;
+  const rendaAnual = rendaMensal * 12 + totalVariableYear;
+  const saldoMesAtual = rendaMesAtual - currentMonthTotal;
+  const percentComprometido = rendaMesAtual > 0 ? (currentMonthTotal / rendaMesAtual) * 100 : 0;
   const saldoAnual = rendaAnual - totalYear;
 
   // ─── Category breakdown for bar chart ───
