@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { TrendingUp, AlertTriangle, Calendar, Wallet, Target, TrendingDown, Activity } from "lucide-react";
+import { TrendingUp, AlertTriangle, Calendar, Wallet, Target, TrendingDown, Activity, ArrowDownLeft } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,7 +17,6 @@ import { useAdvancedInsights } from "@/hooks/useAdvancedInsights";
 import MonthlyBudgetCard from "@/components/MonthlyBudgetCard";
 import FixedExpensesDashboardCard from "@/components/FixedExpensesDashboardCard";
 import PremiumGate from "@/components/PremiumGate";
-import { usePremiumStatus } from "@/hooks/usePremiumStatus";
 import { useFixedExpenseOccurrences } from "@/hooks/useFixedExpenseOccurrences";
 
 const cardVariants = {
@@ -165,7 +164,7 @@ const DashboardPage = () => {
     },
   });
 
-  // Fetch family income
+  // Fetch family income (fixed)
   const { data: familyMembers = [] } = useQuery({
     queryKey: ["dashboard-family"],
     queryFn: async () => {
@@ -173,8 +172,25 @@ const DashboardPage = () => {
       if (!user) return [];
       const { data, error } = await supabase
         .from("family_members")
-        .select("renda_mensal")
+        .select("renda_mensal, nome")
         .eq("user_id", user.id);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // Fetch variable income for current month
+  const { data: variableIncome = [] } = useQuery({
+    queryKey: ["dashboard-variable-income", currentMonthStart],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("variable_income")
+        .select("valor, nome, categoria")
+        .eq("user_id", user.id)
+        .gte("data", currentMonthStart)
+        .lt("data", nextMonthStart);
       if (error) throw error;
       return data ?? [];
     },
@@ -184,6 +200,13 @@ const DashboardPage = () => {
     () => familyMembers.reduce((s, m) => s + Number(m.renda_mensal), 0),
     [familyMembers]
   );
+
+  const rendaVariavel = useMemo(
+    () => variableIncome.reduce((s, i) => s + Number(i.valor), 0),
+    [variableIncome]
+  );
+
+  const rendaTotal = rendaMensal + rendaVariavel;
 
   // Current month: compute real totals from receipt_items + manual expenses
   const { totalGastoReceipts, spendingData, topCategory } = useMemo(() => {
@@ -226,20 +249,21 @@ const DashboardPage = () => {
   // Combined total: receipts + fixed expenses
   const totalGasto = totalGastoReceipts + fixedTotals.total;
   const hasData = totalGasto > 0;
+  const saldoDisponivel = rendaTotal - totalGasto;
 
   const forecast = useMemo(
-    () => generateForecast(allReceipts as any, rendaMensal, fixedTotals.total, allManualExpenses as any),
-    [allReceipts, rendaMensal, fixedTotals.total, allManualExpenses]
+    () => generateForecast(allReceipts as any, rendaTotal, fixedTotals.total, allManualExpenses as any),
+    [allReceipts, rendaTotal, fixedTotals.total, allManualExpenses]
   );
 
   const financialScore = useMemo(
-    () => calculateFinancialScore(allReceipts as any, rendaMensal, fixedTotals.total, allManualExpenses as any),
-    [allReceipts, rendaMensal, fixedTotals.total, allManualExpenses]
+    () => calculateFinancialScore(allReceipts as any, rendaTotal, fixedTotals.total, allManualExpenses as any),
+    [allReceipts, rendaTotal, fixedTotals.total, allManualExpenses]
   );
 
   const recommendations = useMemo(
-    () => generateRecommendations(allReceipts as any, rendaMensal, fixedTotals.total, allManualExpenses as any),
-    [allReceipts, rendaMensal, fixedTotals.total, allManualExpenses]
+    () => generateRecommendations(allReceipts as any, rendaTotal, fixedTotals.total, allManualExpenses as any),
+    [allReceipts, rendaTotal, fixedTotals.total, allManualExpenses]
   );
 
   // Build alerts from forecast
@@ -302,7 +326,7 @@ const DashboardPage = () => {
             <p className="text-5xl md:text-6xl font-bold tracking-tighter font-mono mt-2 text-foreground">
               {formatCurrency(totalGasto)}
             </p>
-            {hasData && rendaMensal > 0 && (
+            {hasData && rendaTotal > 0 && (
               <p className="text-xs text-muted-foreground mt-2">
                 {topCategory && `Maior gasto: ${topCategory.name} (${formatCurrencySimple(topCategory.value)})`}
               </p>
@@ -315,14 +339,65 @@ const DashboardPage = () => {
           </motion.div>
         </div>
 
+        {/* Entradas do mês — renda fixa + variável */}
+        {rendaTotal > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass-card p-5"
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <ArrowDownLeft className="h-4 w-4 text-green-500" />
+              <span className="text-sm font-medium text-muted-foreground">Entradas de {now.toLocaleDateString("pt-BR", { month: "long" })}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="glass-card-inner p-3">
+                <p className="text-xs text-muted-foreground mb-1">Renda fixa</p>
+                <p className="text-base font-bold font-mono text-foreground">{formatCurrencySimple(rendaMensal)}</p>
+                {familyMembers.length > 1 && (
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{familyMembers.length} membros</p>
+                )}
+              </div>
+              <div className="glass-card-inner p-3">
+                <p className="text-xs text-muted-foreground mb-1">Ganhos variáveis</p>
+                <p className={`text-base font-bold font-mono ${rendaVariavel > 0 ? "text-green-500" : "text-muted-foreground"}`}>
+                  {rendaVariavel > 0 ? `+${formatCurrencySimple(rendaVariavel)}` : "—"}
+                </p>
+                {variableIncome.length > 0 && (
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{variableIncome.length} lançamento{variableIncome.length > 1 ? "s" : ""}</p>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center justify-between pt-3 border-t border-border">
+              <div>
+                <p className="text-xs text-muted-foreground">Total de entradas</p>
+                <p className="text-lg font-bold font-mono text-foreground">{formatCurrencySimple(rendaTotal)}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">Disponível após gastos</p>
+                <p className={`text-lg font-bold font-mono ${saldoDisponivel >= 0 ? "text-primary" : "text-destructive"}`}>
+                  {saldoDisponivel >= 0 ? "+" : ""}{formatCurrencySimple(saldoDisponivel)}
+                </p>
+              </div>
+            </div>
+            {rendaVariavel === 0 && (
+              <div className="mt-3 pt-3 border-t border-border">
+                <Link to="/family" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+                  Recebeu algo extra este mês? <span className="text-primary underline underline-offset-2">Adicionar ganho variável →</span>
+                </Link>
+              </div>
+            )}
+          </motion.div>
+        )}
+
         {/* Monthly budget goal */}
         <MonthlyBudgetCard totalGasto={totalGasto} currentMonthStart={currentMonthStart} />
 
         {/* Fixed expenses summary */}
         <FixedExpensesDashboardCard total={fixedTotals.total} paid={fixedTotals.paid} pending={fixedTotals.pending} />
 
-        {/* No income nudge — show when user has expenses but no income set */}
-        {hasData && rendaMensal === 0 && (
+        {/* No income nudge */}
+        {hasData && rendaTotal === 0 && (
           <div className="glass-card p-4 flex items-center gap-3">
             <Wallet className="h-5 w-5 text-muted-foreground shrink-0" />
             <div>
@@ -337,7 +412,7 @@ const DashboardPage = () => {
         )}
 
         {/* Forecast cards — Premium only */}
-        {hasData && rendaMensal > 0 && (
+        {hasData && rendaTotal > 0 && (
           <PremiumGate inline>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {/* Score card */}
@@ -517,7 +592,7 @@ const DashboardPage = () => {
             >
               <h2 className="text-sm font-medium text-muted-foreground mb-3">Previsão financeira</h2>
               <p className="text-sm text-muted-foreground">{forecast.mensagem_gasto}</p>
-              {rendaMensal > 0 && (
+              {rendaTotal > 0 && (
                 <p className={`text-sm mt-2 ${forecast.saldo_previsto < 0 ? "text-accent" : "text-primary"}`}>
                   {forecast.mensagem_saldo}
                 </p>
