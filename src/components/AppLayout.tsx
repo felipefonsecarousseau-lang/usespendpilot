@@ -9,7 +9,7 @@ const navItems = [
 { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
 { to: "/scan", label: "Escanear Nota", icon: ScanLine },
 { to: "/expenses", label: "Contas Fixas", icon: FileText },
-{ to: "/family", label: "Família", icon: Users },
+{ to: "/family", label: "Entradas", icon: Users },
 { to: "/economia-supermercado", label: "Economia", icon: TrendingDown },
 { to: "/lista-inteligente", label: "Lista", icon: ShoppingCart },
 { to: "/gastos-detalhados", label: "Gastos", icon: PieChart },

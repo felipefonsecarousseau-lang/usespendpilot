@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Plus, Trash2, Users, Target, Loader2 } from "lucide-react";
+import { Plus, Trash2, Users, Target, Loader2, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import AppLayout from "@/components/AppLayout";
 import { Link } from "react-router-dom";
 
 const papeis = ["Pai", "Mãe", "Filho(a)", "Cônjuge", "Avô/Avó", "Outro"];
+const categoriasRenda = ["freelance", "bônus", "aluguel", "dividendos", "vendas", "outros"];
 
 interface FamilyMember {
   id: string;
@@ -24,10 +25,29 @@ interface Goal {
   valor_guardado: number;
 }
 
+interface VariableIncome {
+  id: string;
+  nome: string;
+  categoria: string;
+  valor: number;
+  data: string;
+  descricao?: string;
+}
+
+function monthLabel(year: number, month: number) {
+  return new Date(year, month, 1).toLocaleString("pt-BR", { month: "long", year: "numeric" });
+}
+
 const FamilyPage = () => {
+  const now = new Date();
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [variableIncome, setVariableIncome] = useState<VariableIncome[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Month navigation for variable income
+  const [viewYear, setViewYear] = useState(now.getFullYear());
+  const [viewMonth, setViewMonth] = useState(now.getMonth());
 
   // Member form
   const [showMemberForm, setShowMemberForm] = useState(false);
@@ -41,18 +61,28 @@ const FamilyPage = () => {
   const [gValorAlvo, setGValorAlvo] = useState("");
   const [gValorGuardado, setGValorGuardado] = useState("");
 
+  // Variable income form
+  const [showIncomeForm, setShowIncomeForm] = useState(false);
+  const [iNome, setINome] = useState("");
+  const [iCategoria, setICategoria] = useState(categoriasRenda[0]);
+  const [iValor, setIValor] = useState("");
+  const [iData, setIData] = useState(() => new Date().toISOString().split("T")[0]);
+  const [iDescricao, setIDescricao] = useState("");
+
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async () => {
     setLoading(true);
-    const [membersRes, goalsRes] = await Promise.all([
+    const [membersRes, goalsRes, incomeRes] = await Promise.all([
       supabase.from("family_members").select("*").order("created_at"),
       supabase.from("goals").select("*").order("created_at"),
+      supabase.from("variable_income").select("*").order("data", { ascending: false }),
     ]);
     if (membersRes.data) setMembers(membersRes.data as FamilyMember[]);
     if (goalsRes.data) setGoals(goalsRes.data as Goal[]);
+    if (incomeRes.data) setVariableIncome(incomeRes.data as VariableIncome[]);
     setLoading(false);
   };
 
@@ -93,12 +123,56 @@ const FamilyPage = () => {
     setGoals(prev => prev.filter(g => g.id !== id));
   };
 
+  const addVariableIncome = async () => {
+    if (!iNome || !iValor || !iData) { toast.error("Preencha todos os campos."); return; }
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { error } = await supabase.from("variable_income").insert({
+      user_id: user.id,
+      nome: iNome,
+      categoria: iCategoria,
+      valor: parseFloat(iValor),
+      data: iData,
+      descricao: iDescricao || null,
+    } as any);
+    if (error) { toast.error("Erro ao salvar."); return; }
+    toast.success("Ganho adicionado!");
+    setINome(""); setICategoria(categoriasRenda[0]); setIValor("");
+    setIData(new Date().toISOString().split("T")[0]); setIDescricao("");
+    setShowIncomeForm(false);
+    fetchData();
+  };
+
+  const removeVariableIncome = async (id: string) => {
+    await supabase.from("variable_income").delete().eq("id", id);
+    setVariableIncome(prev => prev.filter(i => i.id !== id));
+  };
+
   const formatCurrency = (val: number) => {
     const [intPart, decPart] = val.toFixed(2).split(".");
     return <span>R$ {intPart}<span className="opacity-50">,{decPart}</span></span>;
   };
 
   const totalRenda = members.reduce((s, m) => s + m.renda_mensal, 0);
+
+  // Filter variable income for the viewed month
+  const monthKey = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}`;
+  const incomeThisMonth = useMemo(
+    () => variableIncome.filter(i => i.data.startsWith(monthKey)),
+    [variableIncome, monthKey]
+  );
+  const totalVariableMonth = incomeThisMonth.reduce((s, i) => s + i.valor, 0);
+  const totalEntradas = totalRenda + totalVariableMonth;
+
+  const prevMonth = () => {
+    if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); }
+    else setViewMonth(m => m - 1);
+  };
+  const nextMonth = () => {
+    if (viewMonth === 11) { setViewYear(y => y + 1); setViewMonth(0); }
+    else setViewMonth(m => m + 1);
+  };
+  const isCurrentMonth = viewYear === now.getFullYear() && viewMonth === now.getMonth();
 
   if (loading) {
     return (
@@ -119,9 +193,9 @@ const FamilyPage = () => {
             <div className="flex items-center gap-3">
               <Users className="h-5 w-5 text-primary" />
               <div>
-                <h1 className="text-2xl font-bold tracking-tight">Família</h1>
+                <h1 className="text-2xl font-bold tracking-tight">Família / Entradas</h1>
                 <p className="text-sm text-muted-foreground">
-                  Renda familiar total: {formatCurrency(totalRenda)}/mês
+                  Renda fixa: {formatCurrency(totalRenda)}/mês
                 </p>
               </div>
             </div>
@@ -165,6 +239,93 @@ const FamilyPage = () => {
               </motion.div>
             ))}
           </div>
+        </section>
+
+        {/* Variable Income Section */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <TrendingUp className="h-5 w-5 text-green-500" />
+              <div>
+                <h2 className="text-xl font-bold tracking-tight">Ganhos Variáveis</h2>
+                <p className="text-sm text-muted-foreground">
+                  Freelances, bônus, aluguéis e outras entradas extras.
+                </p>
+              </div>
+            </div>
+            <Button onClick={() => setShowIncomeForm(!showIncomeForm)} size="sm">
+              <Plus className="h-4 w-4 mr-1" /> Ganho
+            </Button>
+          </div>
+
+          {showIncomeForm && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="glass-card p-4 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <Input placeholder="Descrição (ex: Freela site)" value={iNome} onChange={e => setINome(e.target.value)} className="bg-secondary col-span-2" />
+                <select value={iCategoria} onChange={e => setICategoria(e.target.value)} className="bg-secondary border border-border rounded-md px-3 py-2 text-sm capitalize">
+                  {categoriasRenda.map(c => <option key={c} value={c} className="capitalize">{c}</option>)}
+                </select>
+                <Input placeholder="Valor" type="number" step="0.01" value={iValor} onChange={e => setIValor(e.target.value)} className="bg-secondary" />
+                <Input type="date" value={iData} onChange={e => setIData(e.target.value)} className="bg-secondary" />
+                <Input placeholder="Observação (opcional)" value={iDescricao} onChange={e => setIDescricao(e.target.value)} className="bg-secondary" />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" size="sm" onClick={() => setShowIncomeForm(false)}>Cancelar</Button>
+                <Button size="sm" onClick={addVariableIncome}>Adicionar</Button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Month navigation */}
+          <div className="flex items-center justify-between">
+            <button onClick={prevMonth} className="p-1 rounded hover:bg-surface-hover transition-colors text-muted-foreground hover:text-foreground">
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <span className="text-sm font-medium capitalize">{monthLabel(viewYear, viewMonth)}</span>
+            <button onClick={nextMonth} disabled={isCurrentMonth} className="p-1 rounded hover:bg-surface-hover transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30">
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="glass-card divide-y divide-border">
+            {incomeThisMonth.length === 0 && (
+              <p className="p-4 text-sm text-muted-foreground text-center">Nenhum ganho variável neste mês.</p>
+            )}
+            {incomeThisMonth.map((inc, i) => (
+              <motion.div key={inc.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="flex items-center justify-between p-4 group">
+                <div>
+                  <p className="text-sm font-medium">{inc.nome}</p>
+                  <p className="text-xs text-muted-foreground capitalize">
+                    {inc.categoria} · {new Date(inc.data + "T12:00:00").toLocaleDateString("pt-BR")}
+                  </p>
+                  {inc.descricao && <p className="text-xs text-muted-foreground mt-0.5">{inc.descricao}</p>}
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-green-500 font-medium">+{formatCurrency(inc.valor)}</span>
+                  <button onClick={() => removeVariableIncome(inc.id)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+            {incomeThisMonth.length > 0 && (
+              <div className="p-4 flex items-center justify-between bg-green-500/5">
+                <span className="text-sm text-muted-foreground">Total ganhos variáveis</span>
+                <span className="text-sm font-semibold text-green-500">+{formatCurrency(totalVariableMonth)}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Total Entradas summary */}
+          {(totalRenda > 0 || totalVariableMonth > 0) && (
+            <div className="glass-card p-4 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">Total de Entradas</p>
+                <p className="text-xs text-muted-foreground">Renda fixa + ganhos variáveis do mês</p>
+              </div>
+              <span className="text-lg font-bold text-primary">{formatCurrency(totalEntradas)}</span>
+            </div>
+          )}
         </section>
 
         {/* Goals Section */}

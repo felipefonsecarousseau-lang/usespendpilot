@@ -15,21 +15,25 @@ export function useAdvancedInsights() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
-      const [receiptsRes, itemsRes, storesRes, manualRes, familyRes, budgetRes] = await Promise.all([
+      const [receiptsRes, itemsRes, storesRes, manualRes, familyRes, budgetRes, variableIncomeRes] = await Promise.all([
         supabase.from("receipts").select("id, data_compra, valor_total, store_id").eq("user_id", user.id).order("data_compra", { ascending: false }),
         supabase.from("receipt_items").select("receipt_id, nome_normalizado, preco_unitario, preco_total, quantidade, categoria"),
         supabase.from("stores").select("id, nome").eq("user_id", user.id),
         supabase.from("manual_expenses").select("valor, data, categoria").eq("user_id", user.id),
         supabase.from("family_members").select("renda_mensal").eq("user_id", user.id),
         supabase.from("monthly_budget").select("valor_limite, mes").eq("user_id", user.id).eq("mes", currentMonthStart).maybeSingle(),
+        supabase.from("variable_income").select("valor, data").eq("user_id", user.id).gte("data", currentMonthStart),
       ]);
+
+      const rendaFixa = (familyRes.data ?? []).reduce((s, m) => s + Number(m.renda_mensal), 0);
+      const rendaVariavel = (variableIncomeRes.data ?? []).reduce((s, i) => s + Number(i.valor), 0);
 
       return {
         receipts: receiptsRes.data ?? [],
         items: itemsRes.data ?? [],
         stores: storesRes.data ?? [],
         manualExpenses: manualRes.data ?? [],
-        rendaMensal: (familyRes.data ?? []).reduce((s, m) => s + Number(m.renda_mensal), 0),
+        rendaMensal: rendaFixa + rendaVariavel,
         metaMensal: budgetRes.data?.valor_limite ?? null,
       };
     },

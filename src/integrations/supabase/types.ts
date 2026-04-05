@@ -377,6 +377,39 @@ export type Database = {
         }
         Relationships: []
       }
+      variable_income: {
+        Row: {
+          categoria: string
+          created_at: string
+          data: string
+          descricao: string | null
+          id: string
+          nome: string
+          user_id: string
+          valor: number
+        }
+        Insert: {
+          categoria?: string
+          created_at?: string
+          data: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          user_id: string
+          valor: number
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          data?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          user_id?: string
+          valor?: number
+        }
+        Relationships: []
+      }
       user_preferences: {
         Row: {
           created_at: string

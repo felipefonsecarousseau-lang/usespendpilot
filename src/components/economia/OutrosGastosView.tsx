@@ -53,7 +53,7 @@ const OutrosGastosView = ({ period }: Props) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const [manualRes, fixedOccRes, familyRes] = await Promise.all([
+      const [manualRes, fixedOccRes, familyRes, variableIncomeRes] = await Promise.all([
         supabase
           .from("manual_expenses")
           .select("valor, data, categoria, nome")
@@ -70,6 +70,12 @@ const OutrosGastosView = ({ period }: Props) => {
           .from("family_members")
           .select("renda_mensal")
           .eq("user_id", user.id),
+        supabase
+          .from("variable_income")
+          .select("valor, data")
+          .eq("user_id", user.id)
+          .gte("data", cutoffDate)
+          .lte("data", today),
       ]);
 
       if (manualRes.error) throw manualRes.error;
@@ -87,7 +93,11 @@ const OutrosGastosView = ({ period }: Props) => {
       }
       const feMap = new Map(fixedExpenses.map((f) => [f.id, f]));
 
-      const rendaMensal = (familyRes.data || []).reduce((s, m) => s + Number(m.renda_mensal), 0);
+      const rendaFixa = (familyRes.data || []).reduce((s, m) => s + Number(m.renda_mensal), 0);
+      // Spread variable income over the analysis period proportionally (per month)
+      const periodMonths = Math.max(Number(period) / 30, 1);
+      const rendaVariavel = (variableIncomeRes.data || []).reduce((s, i) => s + Number(i.valor), 0) / periodMonths;
+      const rendaMensal = rendaFixa + rendaVariavel;
 
       const txs = buildUnifiedTransactions(
         [],
