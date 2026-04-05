@@ -113,9 +113,40 @@ const VisaoFinanceiraPage = () => {
     },
   });
 
+  // ─── Fetch variable income for selected year ───
+  const { data: variableIncomeYear = [] } = useQuery({
+    queryKey: ["visao-variable-income", selectedYear],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      const { data } = await supabase
+        .from("variable_income")
+        .select("valor, data, categoria, nome")
+        .eq("user_id", user.id)
+        .gte("data", yearStart)
+        .lte("data", yearEnd);
+      return data || [];
+    },
+  });
+
   const rendaMensal = useMemo(
     () => familyMembers.reduce((s, m) => s + Number(m.renda_mensal), 0),
     [familyMembers],
+  );
+
+  // Variable income aggregated per month index (0-11)
+  const variableIncomeByMonth = useMemo(() => {
+    const map: Record<number, number> = {};
+    for (const inc of variableIncomeYear as any[]) {
+      const m = new Date(inc.data + "T12:00:00").getMonth();
+      map[m] = (map[m] || 0) + Number(inc.valor);
+    }
+    return map;
+  }, [variableIncomeYear]);
+
+  const totalVariableYear = useMemo(
+    () => (variableIncomeYear as any[]).reduce((s, i) => s + Number(i.valor), 0),
+    [variableIncomeYear],
   );
 
   // ─── Previous year data for comparison ───
