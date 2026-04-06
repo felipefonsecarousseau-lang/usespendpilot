@@ -345,6 +345,7 @@ export type Database = {
           plan_type: Database["public"]["Enums"]["plan_type"]
           started_at: string
           status: Database["public"]["Enums"]["plan_status"]
+          stripe_customer_id: string | null
           trial_expires_at: string | null
           trial_started_at: string | null
           user_id: string
@@ -358,6 +359,7 @@ export type Database = {
           plan_type?: Database["public"]["Enums"]["plan_type"]
           started_at?: string
           status?: Database["public"]["Enums"]["plan_status"]
+          stripe_customer_id?: string | null
           trial_expires_at?: string | null
           trial_started_at?: string | null
           user_id: string
@@ -371,6 +373,7 @@ export type Database = {
           plan_type?: Database["public"]["Enums"]["plan_type"]
           started_at?: string
           status?: Database["public"]["Enums"]["plan_status"]
+          stripe_customer_id?: string | null
           trial_expires_at?: string | null
           trial_started_at?: string | null
           user_id?: string
@@ -442,7 +445,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_id_by_email: { Args: { p_email: string }; Returns: string }
     }
     Enums: {
       billing_cycle: "monthly" | "yearly"
