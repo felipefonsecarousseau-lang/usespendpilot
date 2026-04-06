@@ -1,14 +1,13 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, ScanLine, FileText, Users, LogOut, TrendingDown, ShoppingCart, Crown, CreditCard, PieChart, Plus, Zap, RotateCcw, Home, BarChart3, HelpCircle } from "lucide-react";
+import { LayoutDashboard, ArrowDownCircle, Users, LogOut, TrendingDown, ShoppingCart, Crown, CreditCard, PieChart, Plus, Zap, RotateCcw, Home, BarChart3, HelpCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import QuickAddExpenseModal from "@/components/QuickAddExpenseModal";
 
 const navItems = [
 { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-{ to: "/scan", label: "Escanear Nota", icon: ScanLine },
-{ to: "/expenses", label: "Contas Fixas", icon: FileText },
+{ to: "/saidas", label: "Saídas", icon: ArrowDownCircle },
 { to: "/family", label: "Entradas", icon: Users },
 { to: "/economia-supermercado", label: "Economia", icon: TrendingDown },
 { to: "/lista-inteligente", label: "Lista", icon: ShoppingCart },
@@ -94,25 +93,25 @@ const AppLayout = ({ children }: {children: ReactNode;}) => {
         {fabMenuOpen &&
         <div className="flex flex-col gap-2 mb-2 animate-in fade-in slide-in-from-bottom-4 duration-200">
             <Link
-            to="/scan"
+            to="/saidas"
             onClick={() => setFabMenuOpen(false)}
             className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2.5 text-sm text-foreground shadow-lg hover:bg-surface-hover transition-colors">
-            
-              <ScanLine className="h-4 w-4 text-primary" />
-              Escanear nota
+
+              <ArrowDownCircle className="h-4 w-4 text-primary" />
+              Saídas
             </Link>
             <button
             onClick={() => {setQuickAddOpen(true);setFabMenuOpen(false);}}
             className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2.5 text-sm text-foreground shadow-lg hover:bg-surface-hover transition-colors">
-            
+
               <Zap className="h-4 w-4 text-accent" />
               Gasto rápido
             </button>
             <Link
-            to="/expenses"
+            to="/saidas"
             onClick={() => setFabMenuOpen(false)}
             className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2.5 text-sm text-foreground shadow-lg hover:bg-surface-hover transition-colors">
-            
+
               <RotateCcw className="h-4 w-4 text-muted-foreground" />
               Conta fixa
             </Link>

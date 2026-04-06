@@ -11,6 +11,7 @@ import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
 import InvoiceScanPage from "./pages/InvoiceScanPage";
 import ManualExpensesPage from "./pages/ManualExpensesPage";
+import SaidasPage from "./pages/SaidasPage";
 import FamilyPage from "./pages/FamilyPage";
 import GoalDetailPage from "./pages/GoalDetailPage";
 import EconomiaSuperPage from "./pages/EconomiaSuperPage";
@@ -55,8 +56,9 @@ function AppRoutes() {
       <Route path="/auth" element={session ? <Navigate to="/dashboard" /> : <AuthPage />} />
       <Route path="/onboarding" element={session ? <OnboardingPage /> : <Navigate to="/" />} />
       <Route path="/dashboard" element={session ? <DashboardPage /> : <Navigate to="/" />} />
-      <Route path="/scan" element={session ? <InvoiceScanPage /> : <Navigate to="/" />} />
-      <Route path="/expenses" element={session ? <ManualExpensesPage /> : <Navigate to="/" />} />
+      <Route path="/saidas" element={session ? <SaidasPage /> : <Navigate to="/" />} />
+      <Route path="/scan" element={session ? <Navigate to="/saidas" /> : <Navigate to="/" />} />
+      <Route path="/expenses" element={session ? <Navigate to="/saidas" /> : <Navigate to="/" />} />
       <Route path="/family" element={session ? <FamilyPage /> : <Navigate to="/" />} />
       <Route path="/goals/:id" element={session ? <GoalDetailPage /> : <Navigate to="/" />} />
       <Route path="/economia-supermercado" element={session ? <EconomiaSuperPage /> : <Navigate to="/" />} />
