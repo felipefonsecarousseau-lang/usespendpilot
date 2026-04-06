@@ -23,13 +23,34 @@ const fmtShort = (v: number) => `R$ ${v.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))
 const ChartTooltipContent = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="glass-card p-3 text-sm">
-      <p className="font-medium text-foreground">{label}</p>
-      {payload.map((p: any, i: number) => (
-        <p key={i} className="text-muted-foreground">
-          {p.name === "renda" ? "Renda" : p.name === "total" ? "Gastos" : p.name}: {fmt(p.value)}
-        </p>
-      ))}
+    <div className="glass-card p-3 text-sm space-y-1">
+      <p className="font-medium text-foreground mb-1.5">{label}</p>
+      {payload.map((p: any, i: number) => {
+        const isRenda = p.dataKey === "renda";
+        const isGastos = p.dataKey === "total";
+        const label = isRenda ? "Entrada (renda)" : isGastos ? "Saída (gastos)" : p.name;
+        const color = isRenda ? "text-emerald-400" : isGastos ? "text-rose-400" : "text-muted-foreground";
+        return (
+          <p key={i} className={`flex justify-between gap-4 ${color}`}>
+            <span>{label}</span>
+            <span className="font-mono font-medium">{fmt(p.value)}</span>
+          </p>
+        );
+      })}
+      {payload.length === 2 && (
+        (() => {
+          const renda = payload.find((p: any) => p.dataKey === "renda")?.value || 0;
+          const gastos = payload.find((p: any) => p.dataKey === "total")?.value || 0;
+          const saldo = renda - gastos;
+          if (renda === 0) return null;
+          return (
+            <p className={`flex justify-between gap-4 border-t border-border pt-1 mt-1 font-medium ${saldo >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+              <span>Saldo</span>
+              <span className="font-mono">{saldo >= 0 ? "+" : ""}{fmt(saldo)}</span>
+            </p>
+          );
+        })()
+      )}
     </div>
   );
 };
@@ -439,15 +460,18 @@ const VisaoFinanceiraPage = () => {
                   <div className="text-center p-3 rounded-xl bg-primary/5 border border-primary/10">
                     <p className="text-xs text-muted-foreground mb-1">Total de entradas</p>
                     <p className="text-xl font-bold font-mono text-primary">{fmtShort(rendaMesAtual)}</p>
-                    {rendaVariavelMesAtual > 0 && (
-                      <p className="text-[10px] text-muted-foreground mt-1">
-                        Fixo {fmtShort(rendaMensal)} + Var. {fmtShort(rendaVariavelMesAtual)}
-                      </p>
-                    )}
+                    <p className="text-[10px] text-muted-foreground mt-1.5 leading-tight">
+                      {rendaVariavelMesAtual > 0
+                        ? `Fixo ${fmtShort(rendaMensal)} + Var. ${fmtShort(rendaVariavelMesAtual)}`
+                        : "Total de renda familiar informada"}
+                    </p>
                   </div>
                   <div className="text-center p-3 rounded-xl bg-accent/5 border border-accent/10">
                     <p className="text-xs text-muted-foreground mb-1">Gastos este mês</p>
                     <p className="text-xl font-bold font-mono text-accent">{fmtShort(currentMonthTotal)}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1.5 leading-tight">
+                      Notas fiscais, gastos rápidos e contas fixas
+                    </p>
                   </div>
                   <div className={`text-center p-3 rounded-xl border ${
                     saldoMesAtual >= 0
@@ -459,6 +483,9 @@ const VisaoFinanceiraPage = () => {
                       saldoMesAtual >= 0 ? "text-primary" : "text-destructive"
                     }`}>
                       {saldoMesAtual >= 0 ? "+" : ""}{fmtShort(saldoMesAtual)}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mt-1.5 leading-tight">
+                      Diferença entre sua renda e seus gastos
                     </p>
                   </div>
                 </div>
@@ -532,6 +559,9 @@ const VisaoFinanceiraPage = () => {
                       <span className="text-xs text-muted-foreground">Média mensal</span>
                     </div>
                     <p className="text-xl font-bold font-mono text-foreground">{fmtShort(mediaMensal)}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1.5 leading-tight">
+                      Média dos meses com gastos registrados
+                    </p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -544,6 +574,9 @@ const VisaoFinanceiraPage = () => {
                       <span className="text-xs text-muted-foreground">Projeção anual</span>
                     </div>
                     <p className="text-xl font-bold font-mono text-foreground">{fmtShort(projecaoAnual)}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1.5 leading-tight">
+                      Estimativa baseada nos seus padrões de consumo
+                    </p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -606,20 +639,26 @@ const VisaoFinanceiraPage = () => {
                       <div>
                         <p className="text-xs text-muted-foreground">Total de entradas</p>
                         <p className="text-lg font-bold font-mono text-primary">{fmtShort(rendaAnual)}</p>
-                        {totalVariableYear > 0 && (
-                          <p className="text-[10px] text-muted-foreground mt-0.5">
-                            incl. {fmtShort(totalVariableYear)} variável
-                          </p>
-                        )}
+                        <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">
+                          {totalVariableYear > 0
+                            ? `Incl. ${fmtShort(totalVariableYear)} variável`
+                            : "Total de renda familiar informada"}
+                        </p>
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground">Gastos acumulados</p>
                         <p className="text-lg font-bold font-mono text-accent">{fmtShort(totalYear)}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">
+                          Soma de todos os gastos do ano
+                        </p>
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground">Saldo anual</p>
                         <p className={`text-lg font-bold font-mono ${saldoAnual >= 0 ? "text-primary" : "text-destructive"}`}>
                           {saldoAnual >= 0 ? "+" : ""}{fmtShort(saldoAnual)}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">
+                          Diferença entre renda e gastos no ano
                         </p>
                       </div>
                     </div>
@@ -631,26 +670,56 @@ const VisaoFinanceiraPage = () => {
 
             {/* Chart — FREE */}
             <motion.div {...cardAnim(5)} className="glass-card p-6">
-              <h2 className="text-sm font-medium text-muted-foreground mb-4">
-                Evolução mês a mês — {selectedYear}
-                {rendaMensal > 0 && viewMode === "total" && (
-                  <span className="text-xs ml-2 opacity-60">(vermelho = acima das entradas)</span>
+              <div className="mb-4">
+                <h2 className="text-sm font-medium text-foreground">
+                  Evolução mês a mês — {selectedYear}
+                </h2>
+                {viewMode === "total" && (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Compare quanto você ganha vs quanto gasta ao longo dos meses
+                  </p>
                 )}
-              </h2>
+              </div>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={monthlyData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                  <BarChart data={monthlyData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }} barCategoryGap="20%">
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 20%, 16%)" />
-                    <XAxis dataKey="month" tick={{ fill: "hsl(215, 16%, 56%)", fontSize: 12 }} />
+                    <XAxis dataKey="month" tick={{ fill: "hsl(215, 16%, 56%)", fontSize: 11 }} />
                     <YAxis
-                      tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-                      tick={{ fill: "hsl(215, 16%, 56%)", fontSize: 12 }}
-                      width={45}
+                      tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
+                      tick={{ fill: "hsl(215, 16%, 56%)", fontSize: 11 }}
+                      width={40}
                     />
                     <Tooltip content={<ChartTooltipContent />} />
                     {viewMode === "total" ? (
                       <>
-                        <Bar dataKey="total" name="total" radius={[6, 6, 0, 0]} maxBarSize={40}>
+                        {rendaMensal > 0 && (
+                          <Bar
+                            dataKey="renda"
+                            name="Entrada (renda)"
+                            fill="hsl(160, 60%, 35%)"
+                            radius={[4, 4, 0, 0]}
+                            maxBarSize={28}
+                          >
+                            {monthlyData.map((_, i) => (
+                              <Cell
+                                key={i}
+                                fill={
+                                  i === currentMonthIndex && yearNum === now.getFullYear()
+                                    ? "hsl(160, 84%, 39%)"
+                                    : "hsl(160, 55%, 30%)"
+                                }
+                              />
+                            ))}
+                          </Bar>
+                        )}
+                        <Bar
+                          dataKey="total"
+                          name="Saída (gastos)"
+                          fill="hsl(0, 70%, 50%)"
+                          radius={[4, 4, 0, 0]}
+                          maxBarSize={28}
+                        >
                           {monthlyData.map((entry, i) => (
                             <Cell
                               key={i}
@@ -658,17 +727,12 @@ const VisaoFinanceiraPage = () => {
                                 entry.total > entry.renda && entry.renda > 0
                                   ? "hsl(0, 84%, 60%)"
                                   : i === currentMonthIndex && yearNum === now.getFullYear()
-                                    ? "hsl(160, 84%, 39%)"
-                                    : "hsl(215, 25%, 20%)"
+                                    ? "hsl(15, 90%, 55%)"
+                                    : "hsl(0, 65%, 45%)"
                               }
                             />
                           ))}
                         </Bar>
-                        {rendaMensal > 0 && (
-                          <Bar dataKey="renda" name="renda" radius={[0, 0, 0, 0]} maxBarSize={0} hide>
-                            {monthlyData.map((_, i) => <Cell key={i} fill="transparent" />)}
-                          </Bar>
-                        )}
                       </>
                     ) : (
                       allCategories.map((cat, ci) => (
@@ -683,31 +747,32 @@ const VisaoFinanceiraPage = () => {
                         />
                       ))
                     )}
-                    {/* Reference line for income */}
-                    {rendaMensal > 0 && viewMode === "total" && (
-                      <CartesianGrid
-                        horizontalPoints={[]}
-                        verticalPoints={[]}
-                      />
-                    )}
                   </BarChart>
                 </ResponsiveContainer>
               </div>
 
-              {/* Income reference line legend */}
-              {rendaMensal > 0 && viewMode === "total" && (
-                <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
+              {/* Legend for total/grouped mode */}
+              {viewMode === "total" && (
+                <div className="flex flex-wrap items-center gap-4 mt-4 pt-3 border-t border-border text-xs text-muted-foreground">
+                  {rendaMensal > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 rounded-sm bg-emerald-600" />
+                      <span>Entrada (renda)</span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "hsl(160, 84%, 39%)" }} />
+                    <div className="w-3 h-3 rounded-sm bg-rose-500" />
+                    <span>Saída (gastos)</span>
+                  </div>
+                  {rendaMensal > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 rounded-sm bg-rose-600" />
+                      <span>Acima da renda</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "hsl(15, 90%, 55%)" }} />
                     <span>Mês atual</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "hsl(0, 84%, 60%)" }} />
-                    <span>Acima da renda</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "hsl(215, 25%, 20%)" }} />
-                    <span>Outros meses</span>
                   </div>
                 </div>
               )}
@@ -732,10 +797,15 @@ const VisaoFinanceiraPage = () => {
             <PremiumGate inline>
               {insights.length > 0 && (
                 <motion.div {...cardAnim(6)} className="glass-card p-6">
-                  <h2 className="text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2">
-                    <Lightbulb className="h-4 w-4 text-accent" />
-                    Insights
-                  </h2>
+                  <div className="mb-4">
+                    <h2 className="text-sm font-medium text-foreground flex items-center gap-2">
+                      <Lightbulb className="h-4 w-4 text-accent" />
+                      Insights
+                    </h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Estimativa baseada nos seus padrões de consumo
+                    </p>
+                  </div>
                   <div className="space-y-3">
                     {insights.map((insight, i) => (
                       <div key={i} className={`glass-card-inner p-3 text-sm flex items-start gap-2.5 ${
