@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import AppLayout from "@/components/AppLayout";
-import { QuickAddExpenseModal } from "@/components/QuickAddExpenseModal";
+import QuickAddExpenseModal from "@/components/QuickAddExpenseModal";
 import InvoiceScanContent from "@/components/InvoiceScanContent";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
