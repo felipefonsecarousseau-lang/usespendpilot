@@ -22,6 +22,7 @@ import GastosDetalhadosPage from "./pages/GastosDetalhadosPage";
 import VisaoFinanceiraPage from "./pages/VisaoFinanceiraPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import FaqPage from "./pages/FaqPage";
+import SimulacaoPage from "./pages/SimulacaoPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -68,6 +69,7 @@ function AppRoutes() {
       <Route path="/gastos-detalhados" element={session ? <GastosDetalhadosPage /> : <Navigate to="/" />} />
       <Route path="/visao-financeira" element={session ? <VisaoFinanceiraPage /> : <Navigate to="/" />} />
       <Route path="/faq" element={session ? <FaqPage /> : <Navigate to="/" />} />
+      <Route path="/simulacao" element={session ? <SimulacaoPage /> : <Navigate to="/" />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
