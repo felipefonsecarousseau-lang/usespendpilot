@@ -52,27 +52,35 @@ function AppRoutes() {
     );
   }
 
+  const fallback = (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="text-muted-foreground text-sm">Carregando...</div>
+    </div>
+  );
+
   return (
-    <Routes>
-      <Route path="/" element={session ? <Navigate to="/dashboard" /> : <LandingPage />} />
-      <Route path="/auth" element={session ? <Navigate to="/dashboard" /> : <AuthPage />} />
-      <Route path="/onboarding" element={session ? <OnboardingPage /> : <Navigate to="/" />} />
-      <Route path="/dashboard" element={session ? <DashboardPage /> : <Navigate to="/" />} />
-      <Route path="/saidas" element={session ? <SaidasPage /> : <Navigate to="/" />} />
-      <Route path="/scan" element={session ? <Navigate to="/saidas" /> : <Navigate to="/" />} />
-      <Route path="/expenses" element={session ? <Navigate to="/saidas" /> : <Navigate to="/" />} />
-      <Route path="/family" element={session ? <FamilyPage /> : <Navigate to="/" />} />
-      <Route path="/goals/:id" element={session ? <GoalDetailPage /> : <Navigate to="/" />} />
-      <Route path="/economia-supermercado" element={session ? <EconomiaSuperPage /> : <Navigate to="/" />} />
-      <Route path="/lista-inteligente" element={session ? <ListaInteligentePage /> : <Navigate to="/" />} />
-      <Route path="/premium" element={session ? <PremiumPage /> : <Navigate to="/" />} />
-      <Route path="/minha-assinatura" element={session ? <MinhaAssinaturaPage /> : <Navigate to="/" />} />
-      <Route path="/gastos-detalhados" element={session ? <GastosDetalhadosPage /> : <Navigate to="/" />} />
-      <Route path="/visao-financeira" element={session ? <VisaoFinanceiraPage /> : <Navigate to="/" />} />
-      <Route path="/faq" element={session ? <FaqPage /> : <Navigate to="/" />} />
-      <Route path="/simulacao" element={session ? <SimulacaoPage /> : <Navigate to="/" />} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <Suspense fallback={fallback}>
+      <Routes>
+        <Route path="/" element={session ? <Navigate to="/dashboard" /> : <LandingPage />} />
+        <Route path="/auth" element={session ? <Navigate to="/dashboard" /> : <AuthPage />} />
+        <Route path="/onboarding" element={session ? <OnboardingPage /> : <Navigate to="/" />} />
+        <Route path="/dashboard" element={session ? <DashboardPage /> : <Navigate to="/" />} />
+        <Route path="/saidas" element={session ? <SaidasPage /> : <Navigate to="/" />} />
+        <Route path="/scan" element={session ? <Navigate to="/saidas" /> : <Navigate to="/" />} />
+        <Route path="/expenses" element={session ? <Navigate to="/saidas" /> : <Navigate to="/" />} />
+        <Route path="/family" element={session ? <FamilyPage /> : <Navigate to="/" />} />
+        <Route path="/goals/:id" element={session ? <GoalDetailPage /> : <Navigate to="/" />} />
+        <Route path="/economia-supermercado" element={session ? <EconomiaSuperPage /> : <Navigate to="/" />} />
+        <Route path="/lista-inteligente" element={session ? <ListaInteligentePage /> : <Navigate to="/" />} />
+        <Route path="/premium" element={session ? <PremiumPage /> : <Navigate to="/" />} />
+        <Route path="/minha-assinatura" element={session ? <MinhaAssinaturaPage /> : <Navigate to="/" />} />
+        <Route path="/gastos-detalhados" element={session ? <GastosDetalhadosPage /> : <Navigate to="/" />} />
+        <Route path="/visao-financeira" element={session ? <VisaoFinanceiraPage /> : <Navigate to="/" />} />
+        <Route path="/faq" element={session ? <FaqPage /> : <Navigate to="/" />} />
+        <Route path="/simulacao" element={session ? <SimulacaoPage /> : <Navigate to="/" />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
   );
 }
 
