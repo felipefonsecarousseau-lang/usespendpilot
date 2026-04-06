@@ -377,6 +377,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          onboarding_completed: boolean
+          onboarding_goal: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          onboarding_completed?: boolean
+          onboarding_goal?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          onboarding_completed?: boolean
+          onboarding_goal?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       variable_income: {
         Row: {
           categoria: string
@@ -407,33 +434,6 @@ export type Database = {
           nome?: string
           user_id?: string
           valor?: number
-        }
-        Relationships: []
-      }
-      user_preferences: {
-        Row: {
-          created_at: string
-          id: string
-          onboarding_completed: boolean
-          onboarding_goal: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          onboarding_completed?: boolean
-          onboarding_goal?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          onboarding_completed?: boolean
-          onboarding_goal?: string | null
-          updated_at?: string
-          user_id?: string
         }
         Relationships: []
       }

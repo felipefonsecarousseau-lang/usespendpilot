@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import EconomiaRealtimeSection from "@/components/landing/EconomiaRealtimeSection";
 import GastosOrganizadosSection from "@/components/landing/GastosOrganizadosSection";
 import InsightsSection from "@/components/landing/InsightsSection";
+import SocialProofBanner from "@/components/landing/SocialProofBanner";
 import {
   Camera,
   Brain,
@@ -143,6 +144,9 @@ const LandingPage = () => {
             <TrustRow />
           </motion.div>
         </Section>
+
+        {/* ── Prova Social ── */}
+        <SocialProofBanner />
 
         {/* ── Demo: Comparação de preços ── */}
         <EconomiaRealtimeSection />
