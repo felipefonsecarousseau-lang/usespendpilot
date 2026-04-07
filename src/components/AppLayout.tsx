@@ -34,7 +34,7 @@ const AppLayout = ({ children }: {children: ReactNode;}) => {
       {/* Sidebar */}
       <aside className="hidden md:flex w-64 flex-col border-r border-border bg-surface p-4">
         <div className="mb-8">
-          <h2 className="text-xl font-bold tracking-tight text-foreground">DívidaZero</h2>
+          <h2 className="text-xl font-bold tracking-tight text-foreground">ZeroDívida</h2>
           <p className="text-xs text-muted-foreground">Gestão Financeira</p>
         </div>
 
