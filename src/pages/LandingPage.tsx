@@ -16,13 +16,11 @@ import {
   ArrowRight,
   ChevronDown,
   ChevronUp,
-  Receipt,
   TrendingDown,
   Lightbulb,
   Lock,
   AlertTriangle,
   HeartHandshake,
-  Zap,
 } from "lucide-react";
 
 const fadeUp = {
@@ -609,7 +607,7 @@ const LandingPage = () => {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
-              <a href="mailto:suporte.spendpilot@gmail.com" className="hover:text-foreground transition-colors">
+              <a href="mailto:suporte.dividazero@gmail.com" className="hover:text-foreground transition-colors">
                 Suporte
               </a>
               <span className="hover:text-foreground transition-colors cursor-pointer">Termos de uso</span>

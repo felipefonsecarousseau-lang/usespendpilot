@@ -46,9 +46,9 @@ const AuthPage = () => {
         
         <div className="glass-card p-8">
           <div className="mb-8 text-center">
-           <h1 className="text-3xl font-bold tracking-tight text-foreground">SpendPilot</h1>
+           <h1 className="text-3xl font-bold tracking-tight text-foreground">DívidaZero</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Seu fluxo de caixa, sob controle.
+              Recupere sua paz financeira.
             </p>
           </div>
 

@@ -18,12 +18,12 @@ const faqSections: FaqSection[] = [
     title: "Uso geral",
     questions: [
       {
-        q: "O que é o SpendPilot?",
-        a: "O SpendPilot é uma plataforma inteligente de controle de gastos. Ele permite escanear notas fiscais, registrar despesas manuais, acompanhar contas fixas, definir metas e ter uma visão completa das suas finanças mensais.",
+        q: "O que é o DívidaZero?",
+        a: "O DívidaZero é uma plataforma inteligente de controle de gastos. Ele permite escanear notas fiscais, registrar despesas manuais, acompanhar contas fixas, definir metas e ter uma visão completa das suas finanças mensais.",
       },
       {
         q: "Preciso pagar para usar?",
-        a: "Não! O SpendPilot oferece um plano gratuito com funcionalidades essenciais. Você também pode experimentar o plano Premium gratuitamente por 15 dias ao se cadastrar.",
+        a: "Não! O DívidaZero oferece um plano gratuito com funcionalidades essenciais. Você também pode experimentar o plano Premium gratuitamente por 15 dias ao se cadastrar.",
       },
       {
         q: "O que está incluído no plano gratuito?",
@@ -63,7 +63,7 @@ const faqSections: FaqSection[] = [
     questions: [
       {
         q: "Como funciona a comparação de preços?",
-        a: "O SpendPilot compara os preços dos produtos que você comprou em diferentes estabelecimentos ao longo do tempo, mostrando onde cada item foi mais barato.",
+        a: "O DívidaZero compara os preços dos produtos que você comprou em diferentes estabelecimentos ao longo do tempo, mostrando onde cada item foi mais barato.",
       },
       {
         q: "Preciso cadastrar produtos manualmente?",
@@ -75,7 +75,7 @@ const faqSections: FaqSection[] = [
       },
       {
         q: "O app sugere economia?",
-        a: "Sim! O SpendPilot calcula quanto você poderia economizar se comprasse seus produtos nos locais mais baratos e gera sugestões personalizadas.",
+        a: "Sim! O DívidaZero calcula quanto você poderia economizar se comprasse seus produtos nos locais mais baratos e gera sugestões personalizadas.",
       },
     ],
   },
@@ -103,7 +103,7 @@ const faqSections: FaqSection[] = [
     questions: [
       {
         q: "Posso cadastrar contas recorrentes?",
-        a: "Sim! Cadastre contas fixas como aluguel, internet, energia, e o SpendPilot acompanha automaticamente o vencimento e status de pagamento todo mês.",
+        a: "Sim! Cadastre contas fixas como aluguel, internet, energia, e o DívidaZero acompanha automaticamente o vencimento e status de pagamento todo mês.",
       },
       {
         q: "Posso marcar como pago?",
@@ -139,7 +139,7 @@ const faqSections: FaqSection[] = [
     questions: [
       {
         q: "Posso definir uma meta mensal de gastos?",
-        a: "Sim! Defina um orçamento mensal e o SpendPilot acompanha em tempo real quanto você já gastou e quanto ainda pode gastar.",
+        a: "Sim! Defina um orçamento mensal e o DívidaZero acompanha em tempo real quanto você já gastou e quanto ainda pode gastar.",
       },
       {
         q: "O app mostra quanto ainda posso gastar?",
@@ -161,7 +161,7 @@ const faqSections: FaqSection[] = [
       },
       {
         q: "Existe previsão de gastos futuros?",
-        a: "Sim! Com base no seu histórico, o SpendPilot projeta seus gastos para os próximos meses, ajudando no planejamento financeiro.",
+        a: "Sim! Com base no seu histórico, o DívidaZero projeta seus gastos para os próximos meses, ajudando no planejamento financeiro.",
       },
     ],
   },
@@ -171,7 +171,7 @@ const faqSections: FaqSection[] = [
     questions: [
       {
         q: "O app me ajuda a economizar?",
-        a: "Sim! Através da comparação de preços, insights de gastos e sugestões personalizadas, o SpendPilot identifica onde e como você pode economizar.",
+        a: "Sim! Através da comparação de preços, insights de gastos e sugestões personalizadas, o DívidaZero identifica onde e como você pode economizar.",
       },
       {
         q: "Posso ver quanto economizei?",
@@ -217,11 +217,11 @@ const faqSections: FaqSection[] = [
     questions: [
       {
         q: "Onde posso pedir ajuda?",
-        a: "Você pode entrar em contato pelo e-mail suporte.spendpilot@gmail.com. Respondemos o mais rápido possível!",
+        a: "Você pode entrar em contato pelo e-mail suporte.dividazero@gmail.com. Respondemos o mais rápido possível!",
       },
       {
         q: "Posso sugerir melhorias?",
-        a: "Claro! Adoramos ouvir nossos usuários. Envie suas sugestões para suporte.spendpilot@gmail.com e ajude a tornar o SpendPilot ainda melhor.",
+        a: "Claro! Adoramos ouvir nossos usuários. Envie suas sugestões para suporte.dividazero@gmail.com e ajude a tornar o DívidaZero ainda melhor.",
       },
     ],
   },
@@ -240,7 +240,7 @@ export default function FaqPage() {
             Perguntas Frequentes
           </h1>
           <p className="mt-3 text-muted-foreground">
-            Encontre respostas rápidas sobre como usar o SpendPilot e aproveitar
+            Encontre respostas rápidas sobre como usar o DívidaZero e aproveitar
             ao máximo suas finanças.
           </p>
         </div>
@@ -283,11 +283,11 @@ export default function FaqPage() {
             possível.
           </p>
           <a
-            href="mailto:suporte.spendpilot@gmail.com"
+            href="mailto:suporte.dividazero@gmail.com"
             className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             <Mail className="h-4 w-4" />
-            suporte.spendpilot@gmail.com
+            suporte.dividazero@gmail.com
           </a>
         </div>
 
