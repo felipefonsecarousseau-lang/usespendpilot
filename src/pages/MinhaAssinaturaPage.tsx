@@ -56,29 +56,41 @@ const MinhaAssinaturaPage = () => {
   const handleManageSubscription = async () => {
     setPortalLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("customer-portal");
+      const { data: { session } } = await supabase.auth.getSession();
+      const supabaseUrl = (supabase as any).supabaseUrl as string;
+      const supabaseKey = (supabase as any).supabaseKey as string;
 
-      // Supabase wraps edge function HTTP errors in `error`
-      if (error) throw new Error(error.message ?? String(error));
+      const res = await fetch(`${supabaseUrl}/functions/v1/customer-portal`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session?.access_token}`,
+          "apikey": supabaseKey,
+        },
+      });
 
-      // Edge function returned a 200 but with an error payload
-      if (data?.error) throw new Error(data.error);
+      const body = await res.json();
 
-      if (data?.url) {
-        window.open(data.url, "_blank");
+      if (!res.ok || body?.error) {
+        const msg: string = body?.error ?? `Erro ${res.status}`;
+        if (msg.includes("No Stripe customer found")) {
+          toast.error("Nenhuma assinatura ativa encontrada. Assine um plano para gerenciar aqui.");
+        } else if (msg.includes("STRIPE_SECRET_KEY")) {
+          toast.error("Configuração de pagamento indisponível. Contate o suporte.");
+        } else {
+          toast.error(`Erro ao abrir portal: ${msg}`);
+        }
+        return;
+      }
+
+      if (body?.url) {
+        window.open(body.url, "_blank");
       } else {
-        throw new Error("URL do portal não retornada.");
+        toast.error("URL do portal não retornada. Contate o suporte.");
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-
-      if (msg.includes("No Stripe customer found")) {
-        toast.error("Nenhuma assinatura Stripe encontrada para este e-mail. Entre em contato com o suporte.");
-      } else if (msg.includes("STRIPE_SECRET_KEY")) {
-        toast.error("Configuração de pagamento indisponível. Entre em contato com o suporte.");
-      } else {
-        toast.error(`Erro ao abrir portal: ${msg}`);
-      }
+      toast.error(`Erro inesperado: ${msg}`);
     } finally {
       setPortalLoading(false);
     }

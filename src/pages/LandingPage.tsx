@@ -484,7 +484,7 @@ const LandingPage = () => {
                   R$ 19,90<span className="text-base font-normal text-muted-foreground">/mês</span>
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  ou <strong className="text-foreground">R$ 119,90/ano</strong> — 2 meses grátis
+                  ou <strong className="text-foreground">R$ 149,90/ano</strong> — 2 meses grátis
                 </p>
               </div>
               <p className="text-xs text-muted-foreground mb-6">Sem cartão durante o período de teste.</p>
