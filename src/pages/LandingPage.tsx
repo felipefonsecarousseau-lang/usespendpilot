@@ -54,7 +54,7 @@ const CTABlock = ({ centered = false }: { centered?: boolean }) => (
   <div className={`flex flex-col sm:flex-row gap-3 mt-8 ${centered ? "justify-center" : ""}`}>
     <Link to="/auth?mode=signup">
       <Button size="lg" className="w-full sm:w-auto text-base px-8 py-6 font-semibold">
-        Descubra Sua Economia Hoje <ArrowRight className="ml-2 h-5 w-5" />
+        Criar conta gratuita <ArrowRight className="ml-2 h-5 w-5" />
       </Button>
     </Link>
     <Link to="/auth?mode=login">
@@ -67,8 +67,8 @@ const CTABlock = ({ centered = false }: { centered?: boolean }) => (
 
 const TrustRow = () => (
   <div className="flex flex-wrap gap-x-5 gap-y-2 mt-5 text-sm text-muted-foreground">
-    <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-primary" /> 15 dias grátis</span>
-    <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-primary" /> Sem cartão de crédito</span>
+    <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-primary" /> Plano gratuito para sempre</span>
+    <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-primary" /> Premium: 15 dias grátis sem cartão</span>
     <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-primary" /> Cancele quando quiser</span>
   </div>
 );
@@ -88,14 +88,14 @@ const FAQ_ITEMS = [
   },
   {
     q: "Posso usar em mais de um dispositivo?",
-    a: "Sim. Sua conta SpendPilot pode ser acessada em múltiplos dispositivos simultaneamente, garantindo controle financeiro onde quer que você esteja.",
+    a: "Sim. Sua conta DívidaZero pode ser acessada em múltiplos dispositivos simultaneamente, garantindo controle financeiro onde quer que você esteja.",
   },
   {
     q: "Preciso de cartão de crédito para testar?",
     a: "Não. O plano gratuito não exige cartão. O período de teste Premium também começa sem nenhuma cobrança.",
   },
   {
-    q: "Como o SpendPilot encontra 'dinheiro escondido'?",
+    q: "Como o DívidaZero encontra 'dinheiro escondido'?",
     a: "A IA analisa seus padrões de compra e compara os preços dos produtos que você mais consome em diferentes estabelecimentos ao longo do tempo. Ela identifica oportunidades de economia, sugerindo onde e quando comprar para maximizar seu dinheiro.",
   },
   {
@@ -112,13 +112,13 @@ const LandingPage = () => {
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/80 backdrop-blur-lg">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <span className="text-xl font-bold tracking-tight text-foreground">SpendPilot</span>
+          <span className="text-xl font-bold tracking-tight text-foreground">DívidaZero</span>
           <div className="flex items-center gap-3">
             <Link to="/auth?mode=login">
               <Button variant="ghost" size="sm">Entrar</Button>
             </Link>
             <Link to="/auth?mode=signup">
-              <Button size="sm">15 dias grátis</Button>
+              <Button size="sm">Criar conta grátis</Button>
             </Link>
           </div>
         </div>
@@ -137,10 +137,14 @@ const LandingPage = () => {
               <span className="text-primary">Recupere sua paz financeira.</span>
             </h1>
             <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
-              O SpendPilot escaneia suas notas fiscais com IA, encontra R$ escondidos no supermercado
+              O DívidaZero escaneia suas notas fiscais com IA, encontra R$ escondidos no supermercado
               e mostra exatamente quanto sobra no mês —{" "}
               <strong className="text-foreground">sem digitar nada</strong>.
             </p>
+            <div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2 text-sm text-primary font-medium">
+              <Check className="h-4 w-4" />
+              100% gratuito para começar — sem necessidade de cartão
+            </div>
           </motion.div>
           <motion.div variants={fadeUp}>
             <CTABlock />
@@ -250,7 +254,7 @@ const LandingPage = () => {
           <motion.div variants={fadeUp} className="max-w-2xl mb-10">
             <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-4">A solução</p>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground">
-              SpendPilot: seu escudo contra o caos financeiro
+              DívidaZero: seu escudo contra o caos financeiro
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
               Transformamos a complexidade em simplicidade — e a ansiedade em ação.
@@ -265,7 +269,7 @@ const LandingPage = () => {
                     Sua realidade atual (caos)
                   </th>
                   <th className="px-5 py-4 text-left font-semibold text-primary bg-primary/5 w-1/2">
-                    Com SpendPilot (controle)
+                    Com DívidaZero (controle)
                   </th>
                 </tr>
               </thead>
@@ -291,7 +295,7 @@ const LandingPage = () => {
                 Quero minha paz de volta! <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <p className="text-xs text-muted-foreground mt-3">15 dias grátis · Sem cartão de crédito</p>
+            <p className="text-xs text-muted-foreground mt-3">Gratuito para sempre · Premium com 15 dias de teste sem cartão</p>
           </motion.div>
         </Section>
 
@@ -325,7 +329,7 @@ const LandingPage = () => {
                 icon: TrendingDown,
                 num: "02",
                 title: "Comparação inteligente",
-                body: "O SpendPilot compara seu histórico de compras e te mostra onde você pode economizar com base nos seus próprios dados.",
+                body: "O DívidaZero compara seu histórico de compras e te mostra onde você pode economizar com base nos seus próprios dados.",
                 detail: "Exemplo: 'Supermercado X economiza 12% nos seus itens essenciais.'",
               },
               {
@@ -361,24 +365,24 @@ const LandingPage = () => {
               +7.243 usuários já recuperaram o controle
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Veja o que pessoas como você estão dizendo sobre como o SpendPilot mudou suas vidas.
+              Veja o que pessoas como você estão dizendo sobre como o DívidaZero mudou suas vidas.
             </p>
           </motion.div>
 
           <div className="mt-8 grid gap-5 md:grid-cols-3">
             {[
               {
-                quote: "Eu estava desesperada com as dívidas do cartão. Com o SpendPilot, consegui ver para onde meu dinheiro ia e quitei R$2.000 em 3 meses. Hoje durmo em paz!",
+                quote: "Eu estava desesperada com as dívidas do cartão. Com o DívidaZero, consegui ver para onde meu dinheiro ia e quitei R$2.000 em 3 meses. Hoje durmo em paz!",
                 name: "Maria S.",
                 city: "São Paulo",
               },
               {
-                quote: "Achei que controlar gastos era um bicho de sete cabeças. O SpendPilot me mostrou que é simples. A função de escanear notas é um divisor de águas. Minha família agradece!",
+                quote: "Achei que controlar gastos era um bicho de sete cabeças. O DívidaZero me mostrou que é simples. A função de escanear notas é um divisor de águas. Minha família agradece!",
                 name: "João P.",
                 city: "Rio de Janeiro",
               },
               {
-                quote: "Sempre fui desorganizado com dinheiro. O SpendPilot me deu o controle que eu precisava, sem me julgar. As dicas de economia são ouro! Já economizei o suficiente para uma viagem.",
+                quote: "Sempre fui desorganizado com dinheiro. O DívidaZero me deu o controle que eu precisava, sem me julgar. As dicas de economia são ouro! Já economizei o suficiente para uma viagem.",
                 name: "Ana L.",
                 city: "Belo Horizonte",
               },
@@ -517,9 +521,9 @@ const LandingPage = () => {
               <Shield className="h-8 w-8 text-primary" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-foreground mb-2">Garantia SpendPilot: 30 dias ou seu dinheiro de volta</h2>
+              <h2 className="text-2xl font-bold text-foreground mb-2">Garantia DívidaZero: 30 dias ou seu dinheiro de volta</h2>
               <p className="text-muted-foreground leading-relaxed max-w-2xl">
-                Experimente por 30 dias. Se você não sentir que o SpendPilot vale o que paga, devolvemos
+                Experimente por 30 dias. Se você não sentir que o DívidaZero vale o que paga, devolvemos
                 o valor integralmente — sem perguntas, sem burocracia. Zero risco para você.
               </p>
             </div>
@@ -601,9 +605,9 @@ const LandingPage = () => {
         <footer className="border-t border-border py-12">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
-              <span className="text-base font-bold text-foreground">SpendPilot</span>
+              <span className="text-base font-bold text-foreground">DívidaZero</span>
               <p className="text-xs text-muted-foreground mt-1">
-                © {new Date().getFullYear()} SpendPilot. Todos os direitos reservados.
+                © {new Date().getFullYear()} DívidaZero. Todos os direitos reservados.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
