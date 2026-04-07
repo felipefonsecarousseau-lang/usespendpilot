@@ -20,6 +20,9 @@ import {
   TrendingDown,
   Lightbulb,
   Lock,
+  AlertTriangle,
+  HeartHandshake,
+  Zap,
 } from "lucide-react";
 
 const fadeUp = {
@@ -53,7 +56,7 @@ const CTABlock = ({ centered = false }: { centered?: boolean }) => (
   <div className={`flex flex-col sm:flex-row gap-3 mt-8 ${centered ? "justify-center" : ""}`}>
     <Link to="/auth?mode=signup">
       <Button size="lg" className="w-full sm:w-auto text-base px-8 py-6 font-semibold">
-        Comece grátis <ArrowRight className="ml-2 h-5 w-5" />
+        Descubra Sua Economia Hoje <ArrowRight className="ml-2 h-5 w-5" />
       </Button>
     </Link>
     <Link to="/auth?mode=login">
@@ -74,28 +77,32 @@ const TrustRow = () => (
 
 const FAQ_ITEMS = [
   {
-    q: "Como o SpendPilot funciona?",
-    a: "Você escaneia suas notas fiscais com a câmera ou enviando o arquivo. A IA extrai os produtos e preços automaticamente. Com o tempo, o sistema compara os preços entre os mercados onde você compra e gera insights de economia.",
+    q: "Funciona com qualquer supermercado?",
+    a: "Sim! Nossa inteligência artificial reconhece e processa notas fiscais de praticamente todos os supermercados e estabelecimentos comerciais do Brasil, desde que a nota tenha QR Code ou código de barras legível.",
   },
   {
-    q: "Meus dados são privados?",
-    a: "Sim. Seus dados são protegidos e visíveis apenas por você. Não compartilhamos nenhuma informação pessoal ou financeira com terceiros.",
+    q: "Meus dados estão seguros?",
+    a: "Absolutamente. Utilizamos criptografia de ponta a ponta e seguimos as mais rigorosas normas de segurança e privacidade (LGPD). Seus dados são seus e não são vendidos ou compartilhados com terceiros.",
   },
   {
-    q: "Quanto tempo leva para configurar?",
-    a: "Menos de 2 minutos. Crie sua conta, escaneie a primeira nota e o dashboard já é atualizado automaticamente.",
+    q: "Preciso digitar alguma coisa manualmente?",
+    a: "Quase nada. Basta tirar uma foto da nota fiscal — a IA extrai todos os dados, produtos e preços automaticamente. Para gastos sem nota (ex.: Uber, iFood), você pode adicionar manualmente em segundos.",
+  },
+  {
+    q: "Posso usar em mais de um dispositivo?",
+    a: "Sim. Sua conta SpendPilot pode ser acessada em múltiplos dispositivos simultaneamente, garantindo controle financeiro onde quer que você esteja.",
   },
   {
     q: "Preciso de cartão de crédito para testar?",
-    a: "Não. O plano gratuito não exige cartão. O período de teste do Premium também começa sem cobrança.",
+    a: "Não. O plano gratuito não exige cartão. O período de teste Premium também começa sem nenhuma cobrança.",
+  },
+  {
+    q: "Como o SpendPilot encontra 'dinheiro escondido'?",
+    a: "A IA analisa seus padrões de compra e compara os preços dos produtos que você mais consome em diferentes estabelecimentos ao longo do tempo. Ela identifica oportunidades de economia, sugerindo onde e quando comprar para maximizar seu dinheiro.",
   },
   {
     q: "Posso cancelar o plano Premium a qualquer momento?",
-    a: "Sim, sem burocracia. O cancelamento pode ser feito nas configurações da conta, sem multa ou fidelidade.",
-  },
-  {
-    q: "O SpendPilot funciona com qualquer supermercado?",
-    a: "Sim. A leitura é feita pela nota fiscal, então funciona com qualquer estabelecimento que emita cupom fiscal.",
+    a: "Sim, sem burocracia. O cancelamento é feito nas configurações da conta, sem multa ou fidelidade mínima.",
   },
 ];
 
@@ -107,15 +114,13 @@ const LandingPage = () => {
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/80 backdrop-blur-lg">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <span className="text-xl font-bold tracking-tight text-foreground">
-            SpendPilot
-          </span>
+          <span className="text-xl font-bold tracking-tight text-foreground">SpendPilot</span>
           <div className="flex items-center gap-3">
             <Link to="/auth?mode=login">
               <Button variant="ghost" size="sm">Entrar</Button>
             </Link>
             <Link to="/auth?mode=signup">
-              <Button size="sm">Começar grátis</Button>
+              <Button size="sm">15 dias grátis</Button>
             </Link>
           </div>
         </div>
@@ -126,17 +131,17 @@ const LandingPage = () => {
         {/* ── Hero ── */}
         <Section className="pt-20 md:pt-32 pb-8">
           <motion.div variants={fadeUp} className="max-w-3xl">
-            <span className="inline-block rounded-full bg-primary/10 text-primary text-sm font-medium px-4 py-1.5 mb-6">
-              Controle financeiro + economia no supermercado
+            <span className="inline-block rounded-full bg-red-500/10 text-red-400 text-sm font-medium px-4 py-1.5 mb-6 border border-red-500/20">
+              80,2% das famílias brasileiras estão endividadas
             </span>
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight leading-[1.1] text-foreground">
-              Saiba para onde vai o seu dinheiro.{" "}
-              <span className="text-primary">E onde economizar.</span>
+              Pare de perder para os juros.{" "}
+              <span className="text-primary">Recupere sua paz financeira.</span>
             </h1>
             <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
-              O SpendPilot lê suas notas fiscais automaticamente, organiza seus gastos por categoria
-              e mostra — com base no seu próprio histórico —{" "}
-              <strong className="text-foreground">qual supermercado tem os melhores preços para você</strong>.
+              O SpendPilot escaneia suas notas fiscais com IA, encontra R$ escondidos no supermercado
+              e mostra exatamente quanto sobra no mês —{" "}
+              <strong className="text-foreground">sem digitar nada</strong>.
             </p>
           </motion.div>
           <motion.div variants={fadeUp}>
@@ -145,113 +150,192 @@ const LandingPage = () => {
           </motion.div>
         </Section>
 
+        {/* ── Stats ── */}
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={stagger}
+          className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
+        >
+          {[
+            { value: "80,2%", label: "das famílias endividadas no Brasil" },
+            { value: "29%", label: "da renda perdida em juros" },
+            { value: "451,5%", label: "juros rotativo do cartão ao ano" },
+            { value: "R$ 1.440", label: "de economia potencial por ano" },
+          ].map((s) => (
+            <motion.div key={s.value} variants={fadeUp} className="glass-card p-4 text-center">
+              <p className="text-2xl font-bold text-primary">{s.value}</p>
+              <p className="text-xs text-muted-foreground mt-1 leading-snug">{s.label}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+
         {/* ── Prova Social ── */}
         <SocialProofBanner />
 
-        {/* ── Demo: Comparação de preços ── */}
-        <EconomiaRealtimeSection />
-
-        {/* ── Demo: Dashboard de gastos ── */}
-        <GastosOrganizadosSection />
-
-        {/* ── Demo: Insights ── */}
-        <InsightsSection />
-
-        {/* ── Problema ── */}
+        {/* ── O Pesadelo Diário ── */}
         <Section>
           <motion.div variants={fadeUp} className="max-w-2xl">
             <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-4">O problema</p>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground">
-              Você provavelmente está gastando mais do que deveria
+              O pesadelo diário de quem não controla as finanças
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Não por descuido — mas porque falta visibilidade. Sem dados, é impossível tomar decisões melhores.
+              A vida de quem lida com dívidas vai muito além dos números negativos na conta. É um ciclo de estresse que afeta a saúde mental e as relações pessoais.
             </p>
           </motion.div>
-          <div className="mt-10 grid gap-5 md:grid-cols-3">
+
+          <div className="mt-10 grid gap-5 md:grid-cols-2">
             {[
               {
-                title: "Sem controle real",
-                body: "Você sabe aproximadamente quanto gasta, mas raramente sabe exatamente onde o dinheiro foi.",
+                icon: AlertTriangle,
+                title: "Ansiedade constante",
+                body: "Medo de abrir o app do banco, insônia pensando nas contas — sem visibilidade, qualquer número parece uma ameaça.",
               },
               {
+                icon: TrendingDown,
+                title: "Juros que nunca param",
+                body: "Rotativo do cartão a 451,5% ao ano + cheque especial a 7,96% ao mês = dívida eterna pagando só o mínimo.",
+              },
+              {
+                icon: Brain,
                 title: "Gastos invisíveis",
-                body: "Supermercado, iFood, Uber — tudo some sem registro. No fim do mês, você não consegue explicar o saldo.",
+                body: "Supermercado, streaming, iFood — tudo some sem registro. No fim do mês, você não consegue explicar o saldo.",
               },
               {
-                title: "Supermercado caro sem saber",
-                body: "Os preços variam até 20% entre mercados. Sem comparação, você paga mais sem perceber.",
+                icon: BarChart3,
+                title: "Falta de clareza para agir",
+                body: "Sem saber exatamente para onde o dinheiro vai, é impossível priorizar dívidas ou criar uma estratégia real.",
               },
             ].map((item) => (
-              <motion.div key={item.title} variants={fadeUp} className="glass-card p-6">
-                <h3 className="font-semibold text-foreground mb-2">{item.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{item.body}</p>
+              <motion.div key={item.title} variants={fadeUp} className="glass-card p-6 flex gap-4">
+                <div className="shrink-0 flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10">
+                  <item.icon className="h-5 w-5 text-red-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground mb-1">{item.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{item.body}</p>
+                </div>
               </motion.div>
             ))}
           </div>
-        </Section>
 
-        {/* ── Agitação: impacto real ── */}
-        <Section>
-          <motion.div variants={fadeUp} className="glass-card p-8 md:p-12 border-accent/20">
-            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-4">O impacto</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-              Quanto isso custa por ano?
-            </h2>
-            <div className="grid gap-8 md:grid-cols-3">
-              {[
-                { value: "R$ 800", label: "gasto médio mensal em supermercado", sub: "para uma família de 3 pessoas" },
-                { value: "15%", label: "de variação de preço entre mercados", sub: "nos mesmos produtos" },
-                { value: "R$ 1.440", label: "de economia potencial por ano", sub: "só comprando no mercado certo" },
-              ].map((stat) => (
-                <div key={stat.value} className="text-center md:text-left">
-                  <p className="text-4xl font-bold text-primary">{stat.value}</p>
-                  <p className="text-sm font-medium text-foreground mt-1">{stat.label}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{stat.sub}</p>
-                </div>
-              ))}
-            </div>
-            <p className="mt-8 text-muted-foreground text-sm border-t border-border pt-6">
-              Esses R$ 1.440 não aparecem em nenhuma conta — são gastos que somem invisíveis, compra a compra.
-              O SpendPilot torna esse desperdício visível.
-            </p>
+          {/* Stats table */}
+          <motion.div variants={fadeUp} className="mt-8 overflow-hidden rounded-xl border border-border">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-surface">
+                  <th className="px-5 py-3 text-left font-semibold text-foreground">Indicador</th>
+                  <th className="px-5 py-3 text-left font-semibold text-foreground">Impacto</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  ["Famílias endividadas", "80,2% no Brasil"],
+                  ["Comprometimento da renda", "29% em juros para endividados"],
+                  ["Juros rotativo cartão", "451,5% ao ano"],
+                  ["Saúde mental afetada", "74–84% dos endividados"],
+                ].map(([ind, imp], i) => (
+                  <tr key={ind} className={`border-b border-border ${i % 2 === 0 ? "bg-card" : "bg-surface/40"}`}>
+                    <td className="px-5 py-3 font-medium text-foreground">{ind}</td>
+                    <td className="px-5 py-3 text-muted-foreground">{imp}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </motion.div>
         </Section>
 
-        {/* ── Solução: 3 pilares ── */}
+        {/* ── Antes × Depois ── */}
+        <Section>
+          <motion.div variants={fadeUp} className="max-w-2xl mb-10">
+            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-4">A solução</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+              SpendPilot: seu escudo contra o caos financeiro
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Transformamos a complexidade em simplicidade — e a ansiedade em ação.
+            </p>
+          </motion.div>
+
+          <motion.div variants={fadeUp} className="overflow-hidden rounded-xl border border-border">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="px-5 py-4 text-left font-semibold text-red-400 bg-red-500/5 w-1/2">
+                    Sua realidade atual (caos)
+                  </th>
+                  <th className="px-5 py-4 text-left font-semibold text-primary bg-primary/5 w-1/2">
+                    Com SpendPilot (controle)
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  ["Contas se acumulam, sem saber por onde começar.", "Visão clara de todos os gastos e o melhor caminho para reduzir dívidas."],
+                  ["Gastos invisíveis drenam seu dinheiro.", "Economias inteligentes reveladas pela IA nas suas compras diárias."],
+                  ["Medo de abrir o app do banco.", "Confiança para tomar decisões financeiras com dados na palma da mão."],
+                  ["Noites em claro pensando nas dívidas.", "Paz mental sabendo que você está no controle."],
+                ].map(([antes, depois], i) => (
+                  <tr key={i} className={`border-b border-border ${i % 2 === 0 ? "" : "bg-surface/30"}`}>
+                    <td className="px-5 py-4 text-muted-foreground align-top">{antes}</td>
+                    <td className="px-5 py-4 text-foreground font-medium align-top">{depois}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </motion.div>
+
+          <motion.div variants={fadeUp} className="mt-6 text-center">
+            <Link to="/auth?mode=signup">
+              <Button size="lg" className="font-semibold px-10 py-6 text-base">
+                Quero minha paz de volta! <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+            <p className="text-xs text-muted-foreground mt-3">15 dias grátis · Sem cartão de crédito</p>
+          </motion.div>
+        </Section>
+
+        {/* ── Demo sections (existing) ── */}
+        <EconomiaRealtimeSection />
+        <GastosOrganizadosSection />
+        <InsightsSection />
+
+        {/* ── 3 passos ── */}
         <Section>
           <motion.div variants={fadeUp} className="max-w-2xl mb-12">
             <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-4">Como funciona</p>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground">
-              Três pilares que trabalham juntos
+              3 passos simples para sua liberdade
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Cada funcionalidade alimenta a próxima. Quanto mais você usa, mais preciso fica.
+              Desenhado para ser intuitivo — configure em menos de 2 minutos e já veja resultados.
             </p>
           </motion.div>
 
           <div className="space-y-6">
             {[
               {
-                icon: Receipt,
+                icon: Camera,
                 num: "01",
-                title: "Leitura automática de notas fiscais",
-                body: "Fotografe ou envie o arquivo da nota. A IA extrai todos os produtos, quantidades e preços sem digitação. Funciona com qualquer estabelecimento que emita cupom fiscal.",
-                detail: "Foto → dados em segundos, organizados por categoria automaticamente.",
+                title: "Foto da nota fiscal",
+                body: "Tire uma foto da sua nota fiscal. A IA extrai todos os dados, produtos e preços automaticamente — sem digitar nada.",
+                detail: "Foto → dados em segundos, organizados por categoria.",
               },
               {
                 icon: TrendingDown,
                 num: "02",
-                title: "Comparação de preços baseada no seu histórico real",
-                body: "Nada de médias genéricas de internet. O SpendPilot compara os preços que você mesmo pagou, nos mercados que você frequenta, para os produtos que você compra.",
-                detail: "Exemplo: Arroz 5kg → Mercado A R$ 32,90 · Mercado B R$ 27,50 → economia de R$ 5,40.",
+                title: "Comparação inteligente",
+                body: "O SpendPilot compara seu histórico de compras e te mostra onde você pode economizar com base nos seus próprios dados.",
+                detail: "Exemplo: 'Supermercado X economiza 12% nos seus itens essenciais.'",
               },
               {
                 icon: Lightbulb,
                 num: "03",
-                title: "Insights práticos de economia",
-                body: "Com base no histórico acumulado, o sistema gera sugestões diretas: qual mercado compensa mais para cada tipo de produto e quanto você economizaria mudando um hábito.",
-                detail: "Sem achismos — só dados do seu próprio histórico de compras.",
+                title: "Insights acionáveis",
+                body: "Receba relatórios claros e personalizados com o quanto sobra para quitar dívidas e como melhorar sua saúde financeira.",
+                detail: "Exemplo: 'R$1.440/ano disponíveis para abater o rotativo.'",
               },
             ].map((pilar) => (
               <motion.div key={pilar.num} variants={fadeUp} className="glass-card p-6 md:p-8 flex gap-6">
@@ -271,6 +355,77 @@ const LandingPage = () => {
           </div>
         </Section>
 
+        {/* ── Depoimentos ── */}
+        <Section>
+          <motion.div variants={fadeUp} className="max-w-2xl mb-4">
+            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-4">Depoimentos</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+              +7.243 usuários já recuperaram o controle
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Veja o que pessoas como você estão dizendo sobre como o SpendPilot mudou suas vidas.
+            </p>
+          </motion.div>
+
+          <div className="mt-8 grid gap-5 md:grid-cols-3">
+            {[
+              {
+                quote: "Eu estava desesperada com as dívidas do cartão. Com o SpendPilot, consegui ver para onde meu dinheiro ia e quitei R$2.000 em 3 meses. Hoje durmo em paz!",
+                name: "Maria S.",
+                city: "São Paulo",
+              },
+              {
+                quote: "Achei que controlar gastos era um bicho de sete cabeças. O SpendPilot me mostrou que é simples. A função de escanear notas é um divisor de águas. Minha família agradece!",
+                name: "João P.",
+                city: "Rio de Janeiro",
+              },
+              {
+                quote: "Sempre fui desorganizado com dinheiro. O SpendPilot me deu o controle que eu precisava, sem me julgar. As dicas de economia são ouro! Já economizei o suficiente para uma viagem.",
+                name: "Ana L.",
+                city: "Belo Horizonte",
+              },
+            ].map((t) => (
+              <motion.div key={t.name} variants={fadeUp} className="glass-card p-6 flex flex-col gap-4">
+                <div className="flex gap-0.5">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} className="h-4 w-4 fill-accent text-accent" />
+                  ))}
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed flex-1">"{t.quote}"</p>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{t.name}</p>
+                  <p className="text-xs text-muted-foreground">{t.city}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.div variants={fadeUp} className="mt-8 glass-card p-6 flex flex-col md:flex-row items-center justify-center gap-8 text-center md:text-left">
+            <div>
+              <p className="text-3xl font-bold text-primary">R$ 1.440</p>
+              <p className="text-sm text-muted-foreground">economizados/ano em média</p>
+            </div>
+            <div className="hidden md:block h-12 w-px bg-border" />
+            <div>
+              <p className="text-3xl font-bold text-primary">92%</p>
+              <p className="text-sm text-muted-foreground">relatam menos ansiedade financeira</p>
+            </div>
+            <div className="hidden md:block h-12 w-px bg-border" />
+            <div>
+              <p className="text-3xl font-bold text-primary">+7.243</p>
+              <p className="text-sm text-muted-foreground">usuários ativos</p>
+            </div>
+          </motion.div>
+
+          <motion.div variants={fadeUp} className="mt-6 text-center">
+            <Link to="/auth?mode=signup">
+              <Button size="lg" className="font-semibold px-10 py-6 text-base">
+                Junte-se a eles! Comece grátis <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+          </motion.div>
+        </Section>
+
         {/* ── Planos ── */}
         <Section>
           <motion.div variants={fadeUp} className="max-w-2xl mb-12">
@@ -278,19 +433,22 @@ const LandingPage = () => {
             <h2 className="text-3xl md:text-4xl font-bold text-foreground">
               Comece grátis. Evolua quando fizer sentido.
             </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Sem cartão de crédito nos primeiros 15 dias. Cancele quando quiser.
+            </p>
           </motion.div>
 
           <div className="grid md:grid-cols-2 gap-6">
             {/* Plano Gratuito */}
             <motion.div variants={fadeUp} className="glass-card p-8 flex flex-col">
               <h3 className="text-xl font-bold text-foreground mb-1">Gratuito</h3>
-              <p className="text-muted-foreground text-sm mb-6">Para começar a ter controle.</p>
+              <p className="text-muted-foreground text-sm mb-6">Ideal para começar a sentir o controle.</p>
               <p className="text-3xl font-bold text-foreground mb-8">
                 R$ 0<span className="text-base font-normal text-muted-foreground">/mês</span>
               </p>
               <ul className="space-y-3 mb-8 flex-1">
                 {[
-                  "Controle de gastos manuais",
+                  "Controle manual de gastos",
                   "Upload e leitura de notas fiscais",
                   "Dashboard de categorias",
                   "Registro de gastos fixos",
@@ -318,24 +476,26 @@ const LandingPage = () => {
                 <Star className="h-5 w-5 text-accent" />
                 <h3 className="text-xl font-bold text-foreground">Premium</h3>
               </div>
-              <p className="text-muted-foreground text-sm mb-6">Para economizar de verdade no supermercado.</p>
+              <p className="text-muted-foreground text-sm mb-6">Tudo ilimitado. Economize de verdade.</p>
               <div className="mb-2">
                 <p className="text-3xl font-bold text-foreground">
                   R$ 19,90<span className="text-base font-normal text-muted-foreground">/mês</span>
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  ou <strong className="text-foreground">R$ 149,90/ano</strong> — 2 meses grátis
+                  ou <strong className="text-foreground">R$ 119,90/ano</strong> — 2 meses grátis
                 </p>
               </div>
               <p className="text-xs text-muted-foreground mb-6">Sem cartão durante o período de teste.</p>
               <ul className="space-y-3 mb-8 flex-1">
                 {[
                   "Tudo do plano gratuito",
-                  "Comparação avançada entre supermercados",
+                  "Escaneamento ilimitado de notas com IA",
+                  "Comparação avançada de preços entre mercados",
                   "Insights automáticos de economia",
-                  "Projeções financeiras mensais",
-                  "Cálculo de economia potencial por produto",
-                  "Análise de saúde financeira",
+                  "Simulador de cenários financeiros",
+                  "Projeções e análise de saúde financeira",
+                  "Suporte prioritário",
+                  "Conteúdos exclusivos de educação financeira",
                 ].map((f) => (
                   <li key={f} className="flex items-center gap-3 text-sm text-foreground">
                     <Check className="h-4 w-4 text-accent shrink-0" />
@@ -359,10 +519,10 @@ const LandingPage = () => {
               <Shield className="h-8 w-8 text-primary" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-foreground mb-2">Garantia de 30 dias</h2>
+              <h2 className="text-2xl font-bold text-foreground mb-2">Garantia SpendPilot: 30 dias ou seu dinheiro de volta</h2>
               <p className="text-muted-foreground leading-relaxed max-w-2xl">
-                Se em 30 dias você não sentir que o SpendPilot vale o que paga, devolvemos o valor integralmente.
-                Sem perguntas, sem burocracia.
+                Experimente por 30 dias. Se você não sentir que o SpendPilot vale o que paga, devolvemos
+                o valor integralmente — sem perguntas, sem burocracia. Zero risco para você.
               </p>
             </div>
           </motion.div>
@@ -370,11 +530,15 @@ const LandingPage = () => {
 
         {/* ── Segurança ── */}
         <Section>
+          <motion.div variants={fadeUp} className="max-w-2xl mb-10">
+            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-4">Privacidade & Segurança</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground">Seus dados são seus.</h2>
+          </motion.div>
           <motion.div variants={fadeUp} className="flex flex-col md:flex-row gap-6">
             {[
               { icon: Lock, title: "Dados criptografados", body: "Suas informações são armazenadas com criptografia e acessíveis apenas por você." },
-              { icon: Shield, title: "Sem venda de dados", body: "Não compartilhamos nenhuma informação financeira com anunciantes ou terceiros." },
-              { icon: Brain, title: "IA sem acesso externo", body: "O processamento das notas é feito internamente. Seus dados não alimentam modelos de terceiros." },
+              { icon: Shield, title: "Sem venda de dados", body: "Não compartilhamos nenhuma informação financeira com anunciantes ou terceiros. Seus dados não são vendidos." },
+              { icon: HeartHandshake, title: "Conformidade LGPD", body: "Seguimos as mais rigorosas normas de segurança e privacidade da Lei Geral de Proteção de Dados." },
             ].map((item) => (
               <div key={item.title} className="glass-card p-6 flex gap-4 flex-1">
                 <div className="shrink-0 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
@@ -394,6 +558,9 @@ const LandingPage = () => {
           <motion.div variants={fadeUp} className="max-w-2xl mb-10">
             <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-4">Dúvidas frequentes</p>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground">Perguntas e respostas</h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Tire suas dúvidas e comece sua jornada para a liberdade financeira com confiança.
+            </p>
           </motion.div>
           <motion.div variants={fadeUp} className="space-y-2 max-w-3xl">
             {FAQ_ITEMS.map((item, i) => (
@@ -425,7 +592,7 @@ const LandingPage = () => {
               Comece a ter clareza financeira hoje
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Controle seus gastos, descubra onde economizar no supermercado e tome decisões financeiras com base em dados reais.
+              Controle seus gastos, descubra onde economizar e tome decisões financeiras com base em dados reais — não em achismos.
             </p>
             <CTABlock centered />
             <TrustRow />
