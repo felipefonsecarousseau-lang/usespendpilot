@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Crown, Clock, Calendar, CreditCard, TrendingDown, Sparkles, Loader2, Settings, AlertTriangle, PiggyBank, ArrowUpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import AppLayout from "@/components/AppLayout";
 import { useFullPlanStatus, useSubscriptionDetails } from "@/hooks/usePremiumStatus";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,7 +15,6 @@ const formatCurrency = (val: number) =>
 const MinhaAssinaturaPage = () => {
   const { data: plan, isLoading } = useFullPlanStatus();
   const { data: subscription } = useSubscriptionDetails();
-  const queryClient = useQueryClient();
   const [checkoutLoading, setCheckoutLoading] = useState<"monthly" | "yearly" | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
 
@@ -58,10 +57,28 @@ const MinhaAssinaturaPage = () => {
     setPortalLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("customer-portal");
-      if (error) throw error;
-      if (data?.url) window.open(data.url, "_blank");
-    } catch {
-      toast.error("Erro ao abrir portal de gerenciamento.");
+
+      // Supabase wraps edge function HTTP errors in `error`
+      if (error) throw new Error(error.message ?? String(error));
+
+      // Edge function returned a 200 but with an error payload
+      if (data?.error) throw new Error(data.error);
+
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      } else {
+        throw new Error("URL do portal não retornada.");
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+
+      if (msg.includes("No Stripe customer found")) {
+        toast.error("Nenhuma assinatura Stripe encontrada para este e-mail. Entre em contato com o suporte.");
+      } else if (msg.includes("STRIPE_SECRET_KEY")) {
+        toast.error("Configuração de pagamento indisponível. Entre em contato com o suporte.");
+      } else {
+        toast.error(`Erro ao abrir portal: ${msg}`);
+      }
     } finally {
       setPortalLoading(false);
     }
@@ -183,7 +200,7 @@ const MinhaAssinaturaPage = () => {
                     disabled={!!checkoutLoading}
                   >
                     {checkoutLoading === "yearly" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUpCircle className="h-4 w-4" />}
-                    Mudar para anual — Economize R$88,90
+                    Mudar para anual — Economize R$118,90
                   </Button>
                 )}
               </div>
@@ -220,8 +237,8 @@ const MinhaAssinaturaPage = () => {
                     Mais popular
                   </span>
                   <p className="text-sm text-muted-foreground">Anual</p>
-                  <p className="text-3xl font-bold text-foreground">R$ 149,90<span className="text-sm font-normal text-muted-foreground">/ano</span></p>
-                  <p className="text-xs text-accent font-medium">Economize R$ 88,90</p>
+                  <p className="text-3xl font-bold text-foreground">R$ 119,90<span className="text-sm font-normal text-muted-foreground">/ano</span></p>
+                  <p className="text-xs text-accent font-medium">Economize R$ 118,90</p>
                   <Button className="w-full gap-2 bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => handleSubscribe("yearly")} disabled={!!checkoutLoading}>
                     {checkoutLoading === "yearly" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                     Assinar anual
