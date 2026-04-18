@@ -63,9 +63,19 @@ const EconomiaSuperPage = () => {
     enabled: viewMode === "supermercado",
   });
 
+  // CNPJ-based canonical key: collapses multiple store_ids do mesmo CNPJ em uma única entrada
+  const storeToCanonical = useMemo(() => {
+    const map = new Map<string, string>();
+    data?.stores?.forEach((s) => map.set(s.id, s.cnpj || s.id));
+    return map;
+  }, [data?.stores]);
+
   const storesMap = useMemo(() => {
     const map = new Map<string, string>();
-    data?.stores?.forEach((s) => map.set(s.id, s.nome));
+    data?.stores?.forEach((s) => {
+      const key = s.cnpj || s.id;
+      if (!map.has(key)) map.set(key, s.nome);
+    });
     return map;
   }, [data?.stores]);
 
@@ -83,13 +93,17 @@ const EconomiaSuperPage = () => {
 
   const enrichedItems = useMemo(() => {
     if (!data?.items) return [];
-    return data.items.map((item) => ({
-      ...item,
-      store_id: receiptStoreMap.get(item.receipt_id) || "",
-      store_nome: storesMap.get(receiptStoreMap.get(item.receipt_id) || "") || "Desconhecido",
-      data_compra: receiptDateMap.get(item.receipt_id) || "",
-    }));
-  }, [data?.items, receiptStoreMap, storesMap, receiptDateMap]);
+    return data.items.map((item) => {
+      const rawStoreId = receiptStoreMap.get(item.receipt_id) || "";
+      const canonicalId = storeToCanonical.get(rawStoreId) || rawStoreId;
+      return {
+        ...item,
+        store_id: canonicalId,
+        store_nome: storesMap.get(canonicalId) || "Desconhecido",
+        data_compra: receiptDateMap.get(item.receipt_id) || "",
+      };
+    });
+  }, [data?.items, receiptStoreMap, storesMap, receiptDateMap, storeToCanonical]);
 
   const supermarketEmpty = viewMode === "supermercado" && !isLoading && (!data?.items?.length);
 
